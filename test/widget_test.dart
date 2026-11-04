@@ -1,0 +1,146 @@
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:ondonto_uninassau/core/network/api_client.dart';
+import 'package:ondonto_uninassau/core/network/auth_token_store.dart';
+import 'package:ondonto_uninassau/data/repositories/atendimento_repository.dart';
+import 'package:ondonto_uninassau/data/repositories/auth_repository.dart';
+import 'package:ondonto_uninassau/data/repositories/patient_repository.dart';
+import 'package:ondonto_uninassau/data/repositories/semiologia_repository.dart';
+import 'package:ondonto_uninassau/data/repositories/professor_repository.dart';
+import 'package:ondonto_uninassau/main.dart';
+
+void main() {
+  testWidgets('shows the institutional login form', (tester) async {
+    await tester.pumpWidget(_app('ALUNO'));
+    expect(find.text('Bem-vindo(a)'), findsOneWidget);
+    expect(find.text('E-mail institucional'), findsOneWidget);
+    expect(find.text('Senha'), findsOneWidget);
+    expect(find.text('Entrar'), findsOneWidget);
+  });
+
+  testWidgets('routes a professor to the professor area', (tester) async {
+    await _loginAs(tester, 'PROFESSOR');
+    expect(find.text('Área do professor'), findsOneWidget);
+  });
+
+  testWidgets('routes an aluno to the student area', (tester) async {
+    await _loginAs(tester, 'ALUNO');
+    expect(find.text('Área do aluno'), findsOneWidget);
+  });
+
+  testWidgets('routes reception to patient management', (tester) async {
+    await _loginAs(tester, 'RECEPCAO');
+    expect(find.text('Recepção · Pacientes'), findsOneWidget);
+    expect(find.text('Cadastrar paciente'), findsOneWidget);
+    expect(find.text('Buscar pacientes'), findsOneWidget);
+  });
+
+  testWidgets('reception search does not expose clinical records', (
+    tester,
+  ) async {
+    await _loginAs(tester, 'RECEPCAO');
+    await tester.tap(find.text('Buscar pacientes'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Resultados da busca'), findsOneWidget);
+    expect(
+      find.text(
+        'A recepção pode buscar e cadastrar pacientes. O prontuário clínico não é exibido nesta área.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Nenhum paciente encontrado'), findsOneWidget);
+  });
+
+  testWidgets('routes admin to the coordinator user panel', (tester) async {
+    await _loginAs(tester, 'ADMIN');
+    expect(find.text('Painel da coordenação'), findsOneWidget);
+    expect(find.text('Integração de gestão pendente'), findsOneWidget);
+  });
+
+  testWidgets('the student can open patient search and registration', (
+    tester,
+  ) async {
+    await _loginAs(tester, 'ALUNO');
+    await tester.tap(find.text('Buscar pacientes'));
+    await tester.pumpAndSettle();
+    expect(find.text('Resultados da busca'), findsOneWidget);
+    expect(find.text('Nenhum paciente encontrado'), findsOneWidget);
+
+    await tester.tap(find.text('Cadastrar novo paciente'));
+    await tester.pumpAndSettle();
+    expect(find.text('Dados pessoais'), findsOneWidget);
+    expect(find.text('Nome completo *'), findsOneWidget);
+    expect(find.text('Data de nascimento *'), findsOneWidget);
+  });
+}
+
+Future<void> _loginAs(WidgetTester tester, String perfil) async {
+  await tester.pumpWidget(_app(perfil));
+  await tester.enterText(
+    find.byType(TextFormField).at(0),
+    'usuario@uninassau.edu.br',
+  );
+  await tester.enterText(find.byType(TextFormField).at(1), 'senha');
+  final submitButton = find.byType(ElevatedButton);
+  await tester.ensureVisible(submitButton);
+  await tester.tap(submitButton);
+  await tester.pumpAndSettle();
+}
+
+Widget _app(String perfil) {
+  final tokenStore = AuthTokenStore();
+  final dio = Dio(BaseOptions(baseUrl: 'https://test.invalid/api/v1'))
+    ..httpClientAdapter = _LoginAdapter(perfil);
+  final repository = AuthRepository(
+    apiClient: ApiClient(
+      dio: dio,
+      tokenProvider: () async => tokenStore.accessToken,
+    ),
+    tokenStore: tokenStore,
+  );
+  return MyApp(
+    authRepository: repository,
+    patientRepository: PatientRepository(apiClient: repository.apiClient),
+    atendimentoRepository: AtendimentoRepository(
+      apiClient: repository.apiClient,
+    ),
+    semiologiaRepository: SemiologiaRepository(apiClient: repository.apiClient),
+    professorRepository: ProfessorRepository(apiClient: repository.apiClient),
+  );
+}
+
+class _LoginAdapter implements HttpClientAdapter {
+  _LoginAdapter(this.perfil);
+
+  final String perfil;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final json = switch ((options.method, options.path)) {
+      ('POST', 'auth/login') =>
+        '{"access_token":"jwt-token","token_type":"bearer","usuario":{"id":4,"nome":"Joana Silva","email":"usuario@uninassau.edu.br","matricula":"OD2026A","perfil":"$perfil"}}',
+      ('GET', 'pacientes') => '[]',
+      ('GET', 'fichas') => '[]',
+      _ =>
+        '{"id":4,"nome":"Joana Silva","email":"usuario@uninassau.edu.br","matricula":"OD2026A","perfil":"$perfil"}',
+    };
+    return ResponseBody.fromString(
+      json,
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}

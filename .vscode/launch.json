@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Demo local (Web)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "toolArgs": ["--dart-define=ENABLE_DEMO_AUTH=true"]
+    },
+    {
+      "name": "Demo local (Android)",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": ["--dart-define=ENABLE_DEMO_AUTH=true"]
+    }
+  ]
+}
