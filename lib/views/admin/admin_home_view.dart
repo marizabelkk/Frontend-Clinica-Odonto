@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../../data/models/admin_user_demo_dto.dart';
 import '../../data/models/usuario_dto.dart';
-import '../../data/repositories/demo_auth_repository.dart';
 import '../../data/viewmodels/admin_view_model.dart';
 import '../../data/viewmodels/auth_view_model.dart';
 import '../auth/login_view.dart';
@@ -33,7 +32,7 @@ class _AdminHomeViewState extends State<AdminHomeView> {
     Navigator.of(context).pushAndRemoveUntil<void>(
       MaterialPageRoute<void>(
         builder: (_) =>
-            LoginView(demoAuthEnabled: DemoAuthRepository.isEnabled),
+            const LoginView(),
       ),
       (_) => false,
     );

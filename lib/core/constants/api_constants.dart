@@ -5,7 +5,9 @@ abstract final class ApiConstants {
     defaultValue: 'http://localhost:8000',
   );
 
-  static const String apiPrefix = '/api/v1';
+  // Dio concatenates baseUrl and relative endpoint paths, so keep the trailing
+  // slash here and keep repository paths without a leading slash.
+  static const String apiPrefix = '/api/v1/';
 
   static String get baseUrl => '${_trimTrailingSlash(serverUrl)}$apiPrefix';
 

@@ -26,15 +26,21 @@ class PacienteDto {
   factory PacienteDto.fromJson(Map<String, dynamic> json) => PacienteDto(
     // The create response uses `paciente_id`; patient list/detail responses
     // expose the same identifier as `id`.
-    pacienteId: (json['paciente_id'] ?? json['id']) as int?,
-    prontuarioId: json['prontuario_id'] as int?,
+    pacienteId: _optionalInt(json['paciente_id'] ?? json['id'], 'id'),
+    prontuarioId: _optionalInt(json['prontuario_id'], 'prontuario_id'),
     nomeCompleto: json['nome_completo'] as String?,
     cpf: json['cpf'] as String?,
     rg: json['rg'] as String?,
-    dataNascimento: json['data_nascimento'] as String?,
+    dataNascimento: json['data_nascimento']?.toString(),
     sexo: json['sexo'] as String?,
     celular: json['celular'] as String?,
   );
+
+  static int? _optionalInt(Object? value, String field) {
+    if (value == null) return null;
+    if (value is int) return value;
+    throw FormatException('Campo $field deve ser um inteiro ou null.');
+  }
 
   /// Fields shown in the contract's patient creation request.
   Map<String, dynamic> toCreateJson() => {

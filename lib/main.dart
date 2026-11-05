@@ -3,10 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'core/network/api_client.dart';
 import 'core/network/auth_token_store.dart';
-import 'core/network/demo_api_adapter.dart';
 import 'core/theme/app_theme.dart';
 import 'data/repositories/auth_repository.dart';
-import 'data/repositories/demo_auth_repository.dart';
 import 'data/repositories/atendimento_repository.dart';
 import 'data/repositories/patient_repository.dart';
 import 'data/repositories/semiologia_repository.dart';
@@ -25,12 +23,10 @@ void main() {
   final apiClient = ApiClient(
     tokenProvider: () async => tokenStore.accessToken,
   );
-  if (DemoAuthRepository.isEnabled) {
-    apiClient.dio.httpClientAdapter = DemoApiAdapter();
-  }
-  final AuthRepository authRepository = DemoAuthRepository.isEnabled
-      ? DemoAuthRepository(apiClient: apiClient, tokenStore: tokenStore)
-      : AuthRepository(apiClient: apiClient, tokenStore: tokenStore);
+  final authRepository = AuthRepository(
+    apiClient: apiClient,
+    tokenStore: tokenStore,
+  );
   final patientRepository = PatientRepository(apiClient: apiClient);
   final atendimentoRepository = AtendimentoRepository(apiClient: apiClient);
   final semiologiaRepository = SemiologiaRepository(apiClient: apiClient);
@@ -43,7 +39,7 @@ void main() {
       atendimentoRepository: atendimentoRepository,
       semiologiaRepository: semiologiaRepository,
       professorRepository: professorRepository,
-      demoAuthEnabled: DemoAuthRepository.isEnabled,
+      demoAuthEnabled: false,
     ),
   );
 }

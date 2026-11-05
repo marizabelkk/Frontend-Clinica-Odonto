@@ -29,7 +29,11 @@ class ProntuarioDto {
     if (id is! int ||
         pacienteId is! int ||
         criadoEm is! String ||
-        patientJson is! Map) {
+        patientJson is! Map ||
+        !_isObjectList(json['condicoes_medicas']) ||
+        !_isObjectList(json['alergias']) ||
+        !_isObjectList(json['medicamentos']) ||
+        !_isObjectList(json['atendimentos'])) {
       throw const FormatException(
         'A API retornou o prontuário em formato inválido.',
       );
@@ -66,4 +70,7 @@ class ProntuarioDto {
         .map((item) => Map<String, dynamic>.from(item as Map))
         .toList(growable: false);
   }
+
+  static bool _isObjectList(Object? value) =>
+      value is List && value.every((item) => item is Map);
 }

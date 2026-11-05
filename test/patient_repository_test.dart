@@ -43,6 +43,10 @@ void main() {
     expect(prontuario.id, 8);
     expect(prontuario.paciente.pacienteId, 10);
     expect(prontuario.atendimentos, isEmpty);
+    expect(
+      adapter.requests.last.uri.path,
+      '/api/v1/pacientes/10/prontuario',
+    );
     expect(adapter.requests.map((request) => request.path), [
       'pacientes',
       'pacientes',

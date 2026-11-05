@@ -1,17 +1,15 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 
 import '../models/auth_dto.dart';
 import '../models/usuario_dto.dart';
 import 'auth_repository.dart';
 
-/// Local-only accounts for exploring the profile screens without an API.
-/// Enable with `--dart-define=ENABLE_DEMO_AUTH=true` in debug builds.
+/// Legacy demo implementation retained for its isolated unit tests only.
+/// The application composition root always uses [AuthRepository].
 class DemoAuthRepository extends AuthRepository {
   DemoAuthRepository({required super.apiClient, required super.tokenStore});
 
-  static const bool isEnabled =
-      kDebugMode && bool.fromEnvironment('ENABLE_DEMO_AUTH');
+  static const bool isEnabled = false;
 
   static const demoAccounts = <_DemoAccount>[
     _DemoAccount(

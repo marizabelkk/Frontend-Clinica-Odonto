@@ -8,8 +8,25 @@ import 'package:ondonto_uninassau/core/network/api_client.dart';
 void main() {
   group('ApiClient', () {
     test('configures the versioned API base URL', () {
-      expect(ApiConstants.baseUrl, endsWith('/api/v1'));
+      expect(ApiConstants.baseUrl, endsWith('/api/v1/'));
     });
+
+    test(
+      'joins the API base URL and relative endpoint without losing v1',
+      () async {
+        final adapter = _CaptureAdapter();
+        final dio = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl))
+          ..httpClientAdapter = adapter;
+        final client = ApiClient(dio: dio);
+
+        await client.dio.post<void>(
+          'auth/login',
+          data: {'email': 'test@example.com'},
+        );
+
+        expect(adapter.requestOptions?.uri.path, '/api/v1/auth/login');
+      },
+    );
 
     test('adds the JWT Bearer token to requests', () async {
       final adapter = _CaptureAdapter();

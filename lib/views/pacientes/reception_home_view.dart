@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/models/paciente_dto.dart';
-import '../../data/repositories/demo_auth_repository.dart';
 import '../../data/viewmodels/auth_view_model.dart';
 import '../auth/login_view.dart';
 import 'patient_create_view.dart';
@@ -28,7 +27,7 @@ class ReceptionHomeView extends StatelessWidget {
     Navigator.of(context).pushAndRemoveUntil<void>(
       MaterialPageRoute<void>(
         builder: (_) =>
-            LoginView(demoAuthEnabled: DemoAuthRepository.isEnabled),
+            const LoginView(),
       ),
       (_) => false,
     );

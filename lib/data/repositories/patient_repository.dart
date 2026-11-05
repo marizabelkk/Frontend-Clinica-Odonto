@@ -61,6 +61,8 @@ class PatientRepository {
   }
 
   Future<ProntuarioDto> getProntuario(int pacienteId) async {
+    // Contract v2 identifies the patient in this route; this is Paciente.id,
+    // not the linked Prontuario.id returned as prontuario_id.
     final response = await apiClient.dio.get<Map<String, dynamic>>(
       'pacientes/$pacienteId/prontuario',
     );

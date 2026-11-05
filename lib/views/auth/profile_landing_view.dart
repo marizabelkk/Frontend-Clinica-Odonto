@@ -8,7 +8,6 @@ import '../pacientes/patient_search_view.dart';
 import '../professor/professor_home_view.dart';
 import '../pacientes/reception_home_view.dart';
 import '../admin/admin_home_view.dart';
-import '../../data/repositories/demo_auth_repository.dart';
 
 /// Routes authenticated users to the area allowed by their profile.
 class ProfileLandingView extends StatelessWidget {
@@ -90,8 +89,7 @@ class ProfileLandingView extends StatelessWidget {
                     Navigator.of(context).pushAndRemoveUntil<void>(
                       MaterialPageRoute<void>(
                         builder: (_) => LoginView(
-                          demoAuthEnabled:
-                              demoMode || DemoAuthRepository.isEnabled,
+                          demoAuthEnabled: demoMode,
                         ),
                       ),
                       (_) => false,
