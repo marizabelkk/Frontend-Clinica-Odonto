@@ -5,9 +5,7 @@ import '../../data/viewmodels/auth_view_model.dart';
 import 'profile_landing_view.dart';
 
 class LoginView extends StatefulWidget {
-  const LoginView({this.demoAuthEnabled = false, super.key});
-
-  final bool demoAuthEnabled;
+  const LoginView({super.key});
 
   @override
   State<LoginView> createState() => _LoginViewState();
@@ -40,10 +38,7 @@ class _LoginViewState extends State<LoginView> {
     if (usuario == null) return;
     await Navigator.of(context).pushAndRemoveUntil<void>(
       MaterialPageRoute<void>(
-        builder: (_) => ProfileLandingView(
-          usuario: usuario,
-          demoMode: widget.demoAuthEnabled,
-        ),
+        builder: (_) => ProfileLandingView(usuario: usuario),
       ),
       (_) => false,
     );
@@ -87,43 +82,6 @@ class _LoginViewState extends State<LoginView> {
                           style: Theme.of(context).textTheme.bodyLarge
                               ?.copyWith(color: const Color(0xFF686B8E)),
                         ),
-                        if (widget.demoAuthEnabled) ...[
-                          const SizedBox(height: 16),
-                          Card(
-                            color: colors.tertiaryContainer,
-                            child: const Padding(
-                              padding: EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Modo de demonstração local',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  SizedBox(height: 6),
-                                  Text(
-                                    'Aluno: aluno@uninassau.edu.br · senha: aluno123',
-                                  ),
-                                  Text(
-                                    'Professor: professor@uninassau.edu.br · senha: professor123',
-                                  ),
-                                  Text(
-                                    'Recepção: recepcao@uninassau.edu.br · senha: recepcao123',
-                                  ),
-                                  Text(
-                                    'Coordenadora: coordenadora@uninassau.edu.br · senha: admin123',
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    'Contas temporárias; não autenticam na API real.',
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
                         const SizedBox(height: 28),
                         Form(
                           key: _formKey,

@@ -3,22 +3,20 @@ import 'package:provider/provider.dart';
 
 import '../../data/models/usuario_dto.dart';
 import '../../data/viewmodels/auth_view_model.dart';
-import 'login_view.dart';
-import '../pacientes/patient_search_view.dart';
-import '../professor/professor_home_view.dart';
-import '../pacientes/reception_home_view.dart';
 import '../admin/admin_home_view.dart';
+import '../pacientes/patient_search_view.dart';
+import '../pacientes/reception_home_view.dart';
+import '../professor/professor_home_view.dart';
+import 'login_view.dart';
 
 /// Routes authenticated users to the area allowed by their profile.
 class ProfileLandingView extends StatelessWidget {
   const ProfileLandingView({
     required this.usuario,
-    this.demoMode = false,
     super.key,
   });
 
   final UsuarioDto usuario;
-  final bool demoMode;
 
   String get _title => switch (usuario.perfil) {
     PerfilUsuario.aluno => 'Área do aluno',
@@ -49,7 +47,7 @@ class ProfileLandingView extends StatelessWidget {
       return const ReceptionHomeView();
     }
     if (usuario.perfil == PerfilUsuario.admin) {
-      return AdminHomeView(demoMode: demoMode);
+      return const AdminHomeView();
     }
     return Scaffold(
       appBar: AppBar(title: Text(_title)),
@@ -88,9 +86,7 @@ class ProfileLandingView extends StatelessWidget {
                     context.read<AuthViewModel>().logout();
                     Navigator.of(context).pushAndRemoveUntil<void>(
                       MaterialPageRoute<void>(
-                        builder: (_) => LoginView(
-                          demoAuthEnabled: demoMode,
-                        ),
+                        builder: (_) => const LoginView(),
                       ),
                       (_) => false,
                     );

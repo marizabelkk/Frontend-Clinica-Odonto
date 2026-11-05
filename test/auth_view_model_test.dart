@@ -8,62 +8,9 @@ import 'package:ondonto_uninassau/core/network/auth_token_store.dart';
 import 'package:ondonto_uninassau/data/models/paciente_dto.dart';
 import 'package:ondonto_uninassau/data/models/usuario_dto.dart';
 import 'package:ondonto_uninassau/data/repositories/auth_repository.dart';
-import 'package:ondonto_uninassau/data/repositories/demo_auth_repository.dart';
 import 'package:ondonto_uninassau/data/viewmodels/auth_view_model.dart';
 
 void main() {
-  test(
-    'demo credentials switch between the student and professor profiles',
-    () async {
-      final tokenStore = AuthTokenStore();
-      final repository = DemoAuthRepository(
-        apiClient: ApiClient(),
-        tokenStore: tokenStore,
-      );
-      final viewModel = AuthViewModel(repository: repository);
-
-      expect(
-        await viewModel.login(
-          email: 'aluno@uninassau.edu.br',
-          senha: 'aluno123',
-        ),
-        isTrue,
-      );
-      expect(viewModel.perfil, PerfilUsuario.aluno);
-      viewModel.logout();
-
-      expect(
-        await viewModel.login(
-          email: 'professor@uninassau.edu.br',
-          senha: 'professor123',
-        ),
-        isTrue,
-      );
-      expect(viewModel.perfil, PerfilUsuario.professor);
-      expect(tokenStore.accessToken, 'demo-professor-token');
-    },
-  );
-
-  test('demo receptionist account authenticates with the reception profile', () async {
-    final repository = DemoAuthRepository(
-      apiClient: ApiClient(),
-      tokenStore: AuthTokenStore(),
-    );
-    final viewModel = AuthViewModel(repository: repository);
-
-    expect(
-      await viewModel.login(
-        email: 'recepcao@uninassau.edu.br',
-        senha: 'recepcao123',
-      ),
-      isTrue,
-      reason: viewModel.errorMessage,
-    );
-    expect(viewModel.perfil, PerfilUsuario.recepcao);
-    expect(viewModel.usuario?.email, 'recepcao@uninassau.edu.br');
-    expect(viewModel.accessToken, 'demo-recepcao-token');
-  });
-
   test('API profile parser recognizes reception', () {
     final user = UsuarioDto.fromJson({
       'id': 5,
@@ -73,24 +20,6 @@ void main() {
     });
 
     expect(user.perfil, PerfilUsuario.recepcao);
-  });
-
-  test('demo authentication rejects incorrect credentials', () async {
-    final repository = DemoAuthRepository(
-      apiClient: ApiClient(),
-      tokenStore: AuthTokenStore(),
-    );
-    final viewModel = AuthViewModel(repository: repository);
-
-    expect(
-      await viewModel.login(
-        email: 'aluno@uninassau.edu.br',
-        senha: 'senha-errada',
-      ),
-      isFalse,
-    );
-    expect(viewModel.isAuthenticated, isFalse);
-    expect(viewModel.errorMessage, 'E-mail ou senha inválidos.');
   });
 
   test('login loads the current user and stores the Bearer token', () async {

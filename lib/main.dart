@@ -9,13 +9,11 @@ import 'data/repositories/atendimento_repository.dart';
 import 'data/repositories/patient_repository.dart';
 import 'data/repositories/semiologia_repository.dart';
 import 'data/repositories/professor_repository.dart';
-import 'data/repositories/admin_demo_repository.dart';
 import 'data/viewmodels/atendimento_view_model.dart';
 import 'data/viewmodels/auth_view_model.dart';
 import 'data/viewmodels/patient_view_model.dart';
 import 'data/viewmodels/semiologia_view_model.dart';
 import 'data/viewmodels/professor_view_model.dart';
-import 'data/viewmodels/admin_view_model.dart';
 import 'views/auth/login_view.dart';
 
 void main() {
@@ -39,7 +37,6 @@ void main() {
       atendimentoRepository: atendimentoRepository,
       semiologiaRepository: semiologiaRepository,
       professorRepository: professorRepository,
-      demoAuthEnabled: false,
     ),
   );
 }
@@ -51,7 +48,6 @@ class MyApp extends StatelessWidget {
     required this.atendimentoRepository,
     required this.semiologiaRepository,
     required this.professorRepository,
-    this.demoAuthEnabled = false,
     super.key,
   });
 
@@ -60,7 +56,6 @@ class MyApp extends StatelessWidget {
   final AtendimentoRepository atendimentoRepository;
   final SemiologiaRepository semiologiaRepository;
   final ProfessorRepository professorRepository;
-  final bool demoAuthEnabled;
 
   @override
   Widget build(BuildContext context) => MultiProvider(
@@ -83,21 +78,11 @@ class MyApp extends StatelessWidget {
       ChangeNotifierProvider(
         create: (_) => ProfessorViewModel(repository: professorRepository),
       ),
-      ChangeNotifierProvider(
-        create: (_) => AdminViewModel(repository: AdminDemoRepository()),
-      ),
     ],
     child: MaterialApp(
       title: 'Prontuário Odontológico',
       theme: AppTheme.lightTheme,
-      builder: (context, child) => demoAuthEnabled
-          ? Banner(
-              message: 'DEMO · DADOS FICTÍCIOS',
-              location: BannerLocation.topEnd,
-              child: child ?? const SizedBox.shrink(),
-            )
-          : child ?? const SizedBox.shrink(),
-      home: LoginView(demoAuthEnabled: demoAuthEnabled),
+      home: const LoginView(),
     ),
   );
 }

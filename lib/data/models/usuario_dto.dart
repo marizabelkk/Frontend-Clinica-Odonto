@@ -25,6 +25,7 @@ class UsuarioDto {
     required this.email,
     required this.perfil,
     this.matricula,
+    this.ativo = true,
   });
 
   final int id;
@@ -32,6 +33,16 @@ class UsuarioDto {
   final String email;
   final String? matricula;
   final PerfilUsuario perfil;
+  final bool ativo;
+
+  UsuarioDto copyWith({bool? ativo}) => UsuarioDto(
+    id: id,
+    nome: nome,
+    email: email,
+    matricula: matricula,
+    perfil: perfil,
+    ativo: ativo ?? this.ativo,
+  );
 
   factory UsuarioDto.fromJson(Map<String, dynamic> json) => UsuarioDto(
     id: json['id'] as int,
@@ -39,5 +50,6 @@ class UsuarioDto {
     email: json['email'] as String,
     matricula: json['matricula'] as String?,
     perfil: PerfilUsuario.fromApi(json['perfil'] as String? ?? ''),
+    ativo: json['ativo'] as bool? ?? true,
   );
 }

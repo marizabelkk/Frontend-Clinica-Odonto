@@ -41,6 +41,59 @@ class AuthRepository {
     return UsuarioDto.fromJson(data);
   }
 
+  Future<List<UsuarioDto>> listUsuarios() async {
+    final response = await apiClient.dio.get<List<dynamic>>('usuarios');
+    final data = response.data;
+    if (data == null) {
+      throw const FormatException(
+        'A API retornou uma resposta vazia para a lista de usuários.',
+      );
+    }
+    return data
+        .map((item) => UsuarioDto.fromJson(item as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
+  Future<UsuarioDto> updateUsuarioStatus(int id, {required bool ativo}) async {
+    final response = await apiClient.dio.patch<Map<String, dynamic>>(
+      'usuarios/$id/status',
+      data: {'ativo': ativo},
+    );
+    final data = response.data;
+    if (data == null) {
+      throw const FormatException(
+        'A API retornou uma resposta vazia ao atualizar o status do usuário.',
+      );
+    }
+    return UsuarioDto.fromJson(data);
+  }
+
+  Future<UsuarioDto> createUsuario({
+    required String nome,
+    required String email,
+    required String senha,
+    required PerfilUsuario perfil,
+    String? matricula,
+  }) async {
+    final response = await apiClient.dio.post<Map<String, dynamic>>(
+      'usuarios',
+      data: {
+        'nome': nome,
+        'email': email,
+        'senha': senha,
+        'matricula': matricula,
+        'perfil': perfil.apiValue,
+      },
+    );
+    final data = response.data;
+    if (data == null) {
+      throw const FormatException(
+        'A API retornou uma resposta vazia ao cadastrar o usuário.',
+      );
+    }
+    return UsuarioDto.fromJson(data);
+  }
+
   void saveAccessToken(String token) => tokenStore.save(token);
 
   void clearAccessToken() => tokenStore.clear();
@@ -59,6 +112,9 @@ class AuthRepository {
       }
       if (statusCode == 422) {
         return 'Confira os dados informados e tente novamente.';
+      }
+      if (statusCode == 409) {
+        return 'Já existe um usuário cadastrado com este e-mail.';
       }
       if (statusCode != null && statusCode >= 500) {
         return 'O serviço está indisponível no momento. Tente novamente mais tarde.';
