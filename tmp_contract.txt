@@ -1,0 +1,359 @@
+Sistema de Prontuário Odontológico - Contrato API / OpenAPI v2.0
+Página 1
+ Contrato da API / OpenAPI
+ Versão: 2.0
+ Sistema: Prontuário Odontológico - MVP de Semiologia
+ Status: Contrato técnico consolidado
+Este documento consolida o Contrato Inicial da API v1 e a Documentação Swagger/OpenAPI v1.1 em uma única
+referência técnica. Ele deverá permanecer alinhado aos Requisitos do Sistema - MVP v2 e à Arquitetura e
+Modelagem Técnica v2.
+\nSistema de Prontuário Odontológico - Contrato API / OpenAPI v2.0
+Página 2
+1. Objetivo
+Definir o contrato de comunicação entre o frontend Flutter e o backend Flask para o MVP de Semiologia,
+incluindo padrões gerais, autenticação, autorização, endpoints, formatos de request e response, estados da ficha,
+regras de negócio e erros HTTP.
+2. Relação com os demais documentos
+
+Requisitos do Sistema - MVP v2: define o comportamento funcional.
+
+Ficha de Semiologia - Avaliação Inicial v2: define os campos e comportamentos da avaliação clínica.
+
+Arquitetura e Modelagem Técnica v2: define estrutura, entidades e persistência.
+
+Contrato da API / OpenAPI v2: define a comunicação entre frontend e backend.
+Após a implementação, o Swagger/OpenAPI gerado pelo backend deverá refletir este contrato e será a referência
+executável oficial.
+3. Padrões gerais
+ Item
+Padrão
+Base da API
+/api/v1
+Formato de troca
+JSON
+Convenção dos campos
+snake_case
+IDs
+Inteiros
+Datas
+YYYY-MM-DD
+Data/hora
+ISO 8601
+Autenticação
+JWT - Bearer Token
+Frontend
+Flutter
+Backend
+Flask
+Persistência
+SQLAlchemy + MySQL
+4. Autenticação
+4.1 Login
+POST /auth/login
+Acesso: Público.
+Request:
+ { "email": "aluno@instituicao.edu.br", "senha": "senha" }
+Response:
+ { "access_token": "", "token_type": "bearer", "usuario": { "id": 12, "nome": "Ana Oliveira",
+"email": "aluno@instituicao.edu.br", "matricula": "OD2026A", "perfil": "ALUNO" } }
+4.2 Usuário atual
+GET /usuarios/me
+Acesso: Autenticado. Retorna os dados do usuário correspondente ao token.
+5. Autorização e perfis
+\nSistema de Prontuário Odontológico - Contrato API / OpenAPI v2.0
+Página 3
+
+ALUNO: cria atendimento, preenche e edita fichas sob sua responsabilidade.
+
+PROFESSOR: consulta fichas, solicita correção e aprova.
+
+ADMIN: previsto para operações administrativas; painel completo fora do MVP.
+A interface pode ocultar ações sem permissão, mas o backend deve sempre validar autorização.
+6. Status oficiais da ficha
+
+RASCUNHO
+
+AGUARDANDO_APROVACAO
+
+CORRECAO_SOLICITADA
+
+APROVADA
+Transições principais:
+ RASCUNHO -> AGUARDANDO_APROVACAO -> CORRECAO_SOLICITADA -> AGUARDANDO_APROVACAO -> APROVADA
+7. Convenções HTTP e JSON
+POST será usado para criação de recursos ou decisões registradas como novos eventos. PATCH será usado para
+alteração parcial ou transição de estado de um recurso existente. GET será usado para consulta.
+O cliente não deve enviar IDs de usuário para substituir a identidade do token. O backend identifica aluno e
+professor pelo JWT.
+8. Usuários
+8.1 Criar usuário
+POST /usuarios
+Acesso: ADMIN.
+A interface administrativa de cadastro de usuários não integra o MVP, mas a rota poderá existir estruturalmente.
+9. Pacientes
+9.1 Buscar pacientes
+GET /pacientes
+Acesso: Autenticado.
+Filtros previstos:
+ GET /pacientes?busca=Maria GET /pacientes?cpf=12345678901
+9.2 Cadastrar paciente
+POST /pacientes
+Acesso: ALUNO, ADMIN.
+Ao cadastrar um paciente, o backend deverá criar automaticamente o prontuário 1:1 associado.
+Request:
+ { "nome_completo": "Maria Oliveira", "cpf": "12345678901", "rg": "MG123456", "data_nascimento":
+"1995-04-12", "sexo": "Feminino", "celular": "31999998888" }
+Response:
+ { "paciente_id": 10, "prontuario_id": 8, "nome_completo": "Maria Oliveira" }
+\nSistema de Prontuário Odontológico - Contrato API / OpenAPI v2.0
+Página 4
+9.3 Consultar dados cadastrais
+GET /pacientes/{id}
+Acesso: Autenticado.
+10. Prontuários
+10.1 Consultar prontuário do paciente
+GET /pacientes/{id}/prontuario
+Acesso: Autenticado.
+Retorna visão clínica agregada do paciente, incluindo dados compartilhados e resumo de atendimentos.
+11. Informações clínicas compartilhadas
+11.1 Condições médicas
+POST /pacientes/{id}/condicoes-medicas
+Acesso: ALUNO.
+11.2 Alergias
+POST /pacientes/{id}/alergias
+Acesso: ALUNO.
+11.3 Medicamentos
+POST /pacientes/{id}/medicamentos
+Acesso: ALUNO.
+Endpoints de edição ou inativação serão detalhados posteriormente conforme a estratégia de histórico clínico
+compartilhado.
+12. Atendimentos
+12.1 Criar atendimento
+POST /atendimentos
+Acesso: ALUNO.
+Request:
+ { "prontuario_id": 18, "especialidade_id": 1 }
+O aluno responsável será identificado pelo JWT; o cliente não envia aluno_id para definir autoria.
+12.2 Meus atendimentos
+GET /atendimentos/meus
+Acesso: ALUNO.
+Filtros opcionais por status poderão ser utilizados, por exemplo:
+ GET /atendimentos/meus?status=CORRECAO_SOLICITADA
+13. Sinais vitais
+POST /atendimentos/{id}/sinais-vitais
+\nSistema de Prontuário Odontológico - Contrato API / OpenAPI v2.0
+Página 5
+Acesso: ALUNO responsável.
+Request de exemplo:
+ { "pressao_sistolica": 120, "pressao_diastolica": 80, "pulso": 72, "frequencia_respiratoria":
+16, "temperatura": 36.5, "peso": 68.50, "altura": 1.65, "glicemia": 95.00 }
+14. Ficha de Semiologia
+14.1 Criar ficha
+POST /atendimentos/{id}/fichas/semiologia
+Acesso: ALUNO responsável.
+Cria uma ficha de Semiologia com status inicial RASCUNHO.
+Response de exemplo:
+ { "id": 201, "atendimento_id": 155, "status": "RASCUNHO", "versao": 1 }
+14.2 Consultar ficha
+GET /fichas/{id}
+Acesso: usuário autorizado.
+14.3 Salvar rascunho ou correção
+PATCH /fichas/{id}
+Acesso: ALUNO responsável.
+Permitido quando a ficha estiver em RASCUNHO ou CORRECAO_SOLICITADA.
+Request parcial de exemplo:
+ { "queixa_principal": "Dor na região inferior esquerda", "historia_doenca_atual": "Paciente
+relata dor há cinco dias." }
+15. Submissão da ficha
+PATCH /fichas/{id}/submeter
+Acesso: ALUNO responsável.
+A mesma ação será utilizada tanto no primeiro envio quanto no reenvio após correção.
+Transições permitidas:
+
+RASCUNHO -> AGUARDANDO_APROVACAO
+
+CORRECAO_SOLICITADA -> AGUARDANDO_APROVACAO
+Response:
+ { "id": 201, "status": "AGUARDANDO_APROVACAO" }
+16. Revisão e aprovação
+16.1 Listar fichas
+GET /fichas
+Acesso: PROFESSOR.
+Filtros por status serão utilizados em vez de rotas separadas.
+Exemplo:
+\nSistema de Prontuário Odontológico - Contrato API / OpenAPI v2.0
+Página 6
+GET /fichas?status=AGUARDANDO_APROVACAO
+16.2 Registrar decisão
+POST /fichas/{id}/aprovacoes
+Acesso: PROFESSOR.
+Solicitar correção:
+ { "decisao": "CORRECAO_SOLICITADA", "observacao": "Detalhar melhor a história da doença atual."
+}
+Aprovar:
+ { "decisao": "APROVADA", "observacao": null }
+Cada decisão deverá gerar um novo registro de aprovação/revisão e atualizar o status da ficha.
+17. Odontograma
+17.1 Consultar odontograma
+GET /prontuarios/{prontuario_id}/odontograma
+Acesso: Autenticado.
+17.2 Registrar condição odontológica
+POST /atendimentos/{atendimento_id}/odontograma/registros
+Acesso: ALUNO responsável.
+Request:
+ { "numero_dente": 36, "face": "OCLUSAL", "condicao_id": 4, "observacao": null }
+O backend utiliza o atendimento para determinar o contexto do prontuário e do odontograma.
+18. Exames complementares - módulo previsto
+A Semiologia v2 prevê exames complementares, porém o contrato definitivo desse módulo depende da modelagem
+detalhada.
+Rotas conceitualmente previstas, ainda não consolidadas:
+ POST /atendimentos/{id}/exames GET /pacientes/{id}/exames
+Anexos e upload de arquivos não serão fechados nesta versão.
+19. Consentimento e assinatura - módulo previsto
+O sistema deverá suportar consentimento e assinatura associados ao paciente e atendimento/ficha.
+Os endpoints definitivos dependem da validação do termo institucional e da decisão sobre armazenamento da
+assinatura.
+Nenhuma estratégia de Base64, arquivo ou object storage é considerada oficial neste contrato.
+20. Erros HTTP
+ Código
+Uso
+400
+Regra de negócio ou dados inválidos
+401
+Autenticação ausente ou inválida
+\nSistema de Prontuário Odontológico - Contrato API / OpenAPI v2.0
+Página 7
+Código
+Uso
+403
+Usuário sem permissão
+404
+Recurso não encontrado
+409
+Conflito, como CPF duplicado
+422
+Erro de validação (Pydantic)
+500
+Erro interno do servidor
+Formato inicial de erro:
+ { "detail": "Mensagem clara para o cliente." }
+21. Regras de negócio
+
+Somente o aluno responsável edita a ficha em RASCUNHO ou CORRECAO_SOLICITADA.
+
+AGUARDANDO_APROVACAO não permanece livremente editável pelo aluno.
+
+Somente professor autorizado registra decisão de correção ou aprovação.
+
+APROVADA é considerada finalizada; mudanças posteriores dependem da estratégia de versionamento.
+
+O backend identifica aluno e professor pelo JWT.
+
+IDs enviados pelo cliente não substituem autorização.
+
+Condições médicas, alergias e medicamentos são informações clínicas compartilhadas.
+
+Sinais vitais pertencem ao atendimento.
+
+O odontograma registra condição clínica por dente/face e mantém vínculo com o atendimento e usuário.
+22. Resumo oficial dos endpoints do MVP
+ Método
+Endpoint
+Acesso
+POST
+/auth/login
+Público
+GET
+/usuarios/me
+Autenticado
+POST
+/usuarios
+ADMIN
+GET
+/pacientes
+Autenticado
+POST
+/pacientes
+ALUNO / ADMIN
+GET
+/pacientes/{id}
+Autenticado
+GET
+/pacientes/{id}/prontuario
+Autenticado
+POST
+/pacientes/{id}/condicoes-medicas
+ALUNO
+POST
+/pacientes/{id}/alergias
+ALUNO
+POST
+/pacientes/{id}/medicamentos
+ALUNO
+POST
+/atendimentos
+ALUNO
+GET
+/atendimentos/meus
+ALUNO
+POST
+/atendimentos/{id}/sinais-vitais
+ALUNO responsável
+POST
+/atendimentos/{id}/fichas/semiologia
+ALUNO responsável
+GET
+/fichas/{id}
+Autorizado
+PATCH
+/fichas/{id}
+ALUNO responsável
+PATCH
+/fichas/{id}/submeter
+ALUNO responsável
+\nSistema de Prontuário Odontológico - Contrato API / OpenAPI v2.0
+Página 8
+Método
+Endpoint
+Acesso
+GET
+/fichas
+PROFESSOR
+POST
+/fichas/{id}/aprovacoes
+PROFESSOR
+GET
+/prontuarios/{id}/odontograma
+Autenticado
+POST
+/atendimentos/{id}/odontograma/registros
+ALUNO responsável
+23. Decisões pendentes
+
+Endpoints completos de exames complementares.
+
+Endpoints de anexos.
+
+Endpoints de consentimento.
+
+Upload e armazenamento da assinatura.
+
+Endpoints de histórico/versionamento completo.
+
+Operações de edição/inativação de medicamentos, alergias e condições médicas.
+
+Endpoints das especialidades futuras.
+
+Detalhamento final dos payloads completos da Semiologia após validação clínica.
+24. Governança do contrato
+O presente documento é a referência manual consolidada do contrato entre frontend e backend.
+Após a implementação dos endpoints, a especificação OpenAPI gerada automaticamente pelo backend será
+a referência executável oficial.
+Não deverá existir uma segunda lista manual de endpoints divergente da implementação.
+Mudanças em rotas, métodos, campos, enums, tipos ou respostas deverão ser combinadas entre frontend e
+backend antes de entrar no código e refletidas no Swagger/OpenAPI.
+25. Observação final
+Esta versão substitui o Contrato Inicial da API v1 e a documentação manual Swagger/OpenAPI v1.1 como
+referência consolidada de integração.
+O objetivo é manter uma única fonte coerente para o MVP, reduzir divergências entre documentos e permitir que
+Flutter e Flask sejam desenvolvidos em paralelo.
