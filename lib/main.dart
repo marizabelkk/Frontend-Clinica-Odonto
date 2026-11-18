@@ -79,6 +79,7 @@ class MyApp extends StatelessWidget {
         create: (_) => AtendimentoViewModel(
           atendimentoRepository: atendimentoRepository,
           semiologiaRepository: semiologiaRepository,
+          patientRepository: patientRepository,
         ),
       ),
       ChangeNotifierProvider(

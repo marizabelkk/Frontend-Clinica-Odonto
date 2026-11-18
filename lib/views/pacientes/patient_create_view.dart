@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../data/models/paciente_dto.dart';
 import '../../data/viewmodels/patient_view_model.dart';
-import '../widgets/theme_toggle_button.dart';
+import '../widgets/student_page_header.dart';
 
 class PatientCreateView extends StatefulWidget {
   const PatientCreateView({super.key});
@@ -72,15 +72,16 @@ class _PatientCreateViewState extends State<PatientCreateView> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cadastrar novo paciente'),
-        actions: const [ThemeToggleButton()],
-        backgroundColor: colors.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
+      backgroundColor: StudentPageStyle.background(context),
+      body: Theme(
+        data: StudentPageStyle.readableTheme(context),
+        child: Column(children: [
+          const StudentPageHeader(
+            title: 'Cadastrar novo paciente',
+            subtitle: 'Preencha os dados para criar o cadastro e o prontuário.',
+          ),
+          Expanded(child: SafeArea(
         child: Form(
           key: _formKey,
           child: ListView(
@@ -197,6 +198,8 @@ class _PatientCreateViewState extends State<PatientCreateView> {
             ],
           ),
         ),
+          )),
+        ]),
       ),
     );
   }

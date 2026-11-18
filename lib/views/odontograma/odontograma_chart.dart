@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../data/models/odontograma_dto.dart';
 import 'tooth_map.dart';
 
@@ -34,7 +35,9 @@ class OdontogramaChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
+    final accent = Theme.of(context).brightness == Brightness.dark
+        ? AppTheme.gold
+        : Theme.of(context).colorScheme.primary;
     final marked = <int, Color>{
       for (final entry in registrosPorDente.entries)
         if (entry.value.isNotEmpty)

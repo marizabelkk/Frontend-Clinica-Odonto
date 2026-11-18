@@ -8,6 +8,17 @@ class SemiologiaRepository {
 
   final ApiClient apiClient;
 
+  Future<FichaSemiologiaDto> getFicha(int fichaId) async {
+    final response = await apiClient.dio.get<Map<String, dynamic>>(
+      'fichas/$fichaId',
+    );
+    final data = response.data;
+    if (data == null) {
+      throw const FormatException('A API retornou uma ficha vazia.');
+    }
+    return FichaSemiologiaDto.fromJson(data);
+  }
+
   Future<FichaSemiologiaDto> createFicha(int atendimentoId) async {
     final response = await apiClient.dio.post<Map<String, dynamic>>(
       'atendimentos/$atendimentoId/fichas/semiologia',
@@ -26,6 +37,10 @@ class SemiologiaRepository {
     required SemiologiaDraftDto draft,
   }) async {
     await apiClient.dio.patch<void>('fichas/$fichaId', data: draft.toJson());
+  }
+
+  Future<void> deleteDraft(int fichaId) async {
+    await apiClient.dio.delete<void>('fichas/$fichaId');
   }
 
   Future<StatusFicha> submit(int fichaId) async {

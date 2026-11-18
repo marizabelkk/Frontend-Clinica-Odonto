@@ -3,17 +3,21 @@ import 'package:flutter/foundation.dart';
 import '../../data/models/atendimento_dto.dart';
 import '../../data/models/especialidade_dto.dart';
 import '../../data/models/ficha_semiologia_dto.dart';
+import '../../data/models/paciente_dto.dart';
 import '../repositories/atendimento_repository.dart';
+import '../repositories/patient_repository.dart';
 import '../repositories/semiologia_repository.dart';
 
 class AtendimentoViewModel extends ChangeNotifier {
   AtendimentoViewModel({
     required this.atendimentoRepository,
     required this.semiologiaRepository,
+    this.patientRepository,
   });
 
   final AtendimentoRepository atendimentoRepository;
   final SemiologiaRepository semiologiaRepository;
+  final PatientRepository? patientRepository;
 
   AtendimentoDto? _atendimento;
   FichaSemiologiaDto? _ficha;
@@ -23,6 +27,9 @@ class AtendimentoViewModel extends ChangeNotifier {
   String? _errorMessage;
   bool _isLoading = false;
   bool _isLoadingSpecialties = false;
+  List<MeuAtendimentoDto> _myAttendances = const [];
+  String? _myAttendancesError;
+  bool _isLoadingMine = false;
 
   AtendimentoDto? get atendimento => _atendimento;
   FichaSemiologiaDto? get ficha => _ficha;
@@ -32,6 +39,73 @@ class AtendimentoViewModel extends ChangeNotifier {
   List<EspecialidadeDto> get especialidades => _especialidades;
   String? get specialtyErrorMessage => _specialtyErrorMessage;
   bool get isLoadingSpecialties => _isLoadingSpecialties;
+  List<MeuAtendimentoDto> get myAttendances => _myAttendances;
+  String? get myAttendancesError => _myAttendancesError;
+  bool get isLoadingMine => _isLoadingMine;
+
+  int countForStatus(StatusFicha status) =>
+      _myAttendances.where((item) => item.status == status).length;
+
+  int countThisMonth(StatusFicha status) {
+    final now = DateTime.now();
+    return _myAttendances.where((item) {
+      final started = item.atendimento.iniciadoEm?.toLocal();
+      return item.status == status &&
+          started != null &&
+          started.year == now.year &&
+          started.month == now.month;
+    }).length;
+  }
+
+  Future<void> loadMyAttendances() async {
+    _isLoadingMine = true;
+    _myAttendancesError = null;
+    notifyListeners();
+    try {
+      final all = await atendimentoRepository.listMine();
+
+      Map<int, PacienteDto> patientsByRecord = {};
+      try {
+        final patients = patientRepository == null
+            ? const <PacienteDto>[]
+            : await patientRepository!.searchPatients();
+        patientsByRecord = {
+          for (final patient in patients)
+            if (patient.prontuarioId != null) patient.prontuarioId!: patient,
+        };
+      } catch (_) {
+        // A lista de atendimentos continua útil mesmo quando os dados de paciente falham.
+      }
+
+      _myAttendances = all.map((attendance) {
+        return MeuAtendimentoDto(
+          atendimento: attendance,
+          status: attendance.status,
+          paciente: attendance.prontuarioId == null
+              ? null
+              : patientsByRecord[attendance.prontuarioId],
+        );
+      }).toList(growable: false);
+    } catch (error) {
+      _myAttendancesError = AtendimentoRepository.userMessageFor(error);
+    } finally {
+      _isLoadingMine = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> deleteAttendance(int attendanceId) async {
+    try {
+      await atendimentoRepository.deleteAttendance(attendanceId);
+      await loadMyAttendances();
+      return null;
+    } catch (error) {
+      return AtendimentoRepository.userMessageFor(error);
+    }
+  }
+
+  Future<List<SinaisVitaisDto>> listVitalSigns(int attendanceId) =>
+      atendimentoRepository.listVitalSigns(attendanceId);
   int? get semiologiaEspecialidadeId {
     final matches = _especialidades.where(
       (item) => item.ativo && item.nome.trim().toLowerCase() == 'semiologia',
@@ -90,9 +164,12 @@ class AtendimentoViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> saveVitalSigns(SinaisVitaisDto sinaisVitais) async {
-    final atendimentoId = _atendimento?.id;
-    if (atendimentoId == null) {
+  Future<bool> saveVitalSigns(
+    SinaisVitaisDto sinaisVitais, {
+    int? atendimentoId,
+  }) async {
+    final targetId = atendimentoId ?? _atendimento?.id;
+    if (targetId == null) {
       _errorMessage = 'Inicie um atendimento antes de salvar sinais vitais.';
       notifyListeners();
       return false;
@@ -102,7 +179,7 @@ class AtendimentoViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       await atendimentoRepository.saveVitalSigns(
-        atendimentoId: atendimentoId,
+        atendimentoId: targetId,
         sinaisVitais: sinaisVitais,
       );
       return true;

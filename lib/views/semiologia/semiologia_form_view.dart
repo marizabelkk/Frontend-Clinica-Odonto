@@ -7,7 +7,7 @@ import '../../data/models/paciente_dto.dart';
 import '../../data/viewmodels/atendimento_view_model.dart';
 import '../../data/viewmodels/semiologia_view_model.dart';
 import '../widgets/mock_document_attachments.dart';
-import '../widgets/theme_toggle_button.dart';
+import '../widgets/student_page_header.dart';
 import '../odontograma/odontograma_view.dart';
 
 class SemiologiaFormView extends StatefulWidget {
@@ -15,12 +15,16 @@ class SemiologiaFormView extends StatefulWidget {
     required this.paciente,
     required this.atendimentoId,
     required this.ficha,
+    this.readOnly = false,
+    this.teacherComment,
     super.key,
   });
 
   final PacienteDto paciente;
   final int atendimentoId;
   final FichaSemiologiaDto ficha;
+  final bool readOnly;
+  final String? teacherComment;
 
   @override
   State<SemiologiaFormView> createState() => _SemiologiaFormViewState();
@@ -40,6 +44,10 @@ class _SemiologiaFormViewState extends State<SemiologiaFormView> {
   final _especialidadeEncaminhamentoController = TextEditingController();
   final _motivoEncaminhamentoController = TextEditingController();
   bool _necessitaEncaminhamento = false;
+  bool get _canEdit =>
+      !widget.readOnly &&
+      (widget.ficha.status == StatusFicha.rascunho ||
+          widget.ficha.status == StatusFicha.correcaoSolicitada);
   final Map<String, TextEditingController> _vitals = {
     'pressao_sistolica': TextEditingController(),
     'pressao_diastolica': TextEditingController(),
@@ -50,6 +58,47 @@ class _SemiologiaFormViewState extends State<SemiologiaFormView> {
     'altura': TextEditingController(),
     'glicemia': TextEditingController(),
   };
+
+  @override
+  void initState() {
+    super.initState();
+    final draft = widget.ficha.semiologia;
+    if (draft != null) {
+      _queixaController.text = draft.queixaPrincipal ?? '';
+      _historiaController.text = draft.historiaDoencaAtual ?? '';
+      _antecedentesController.text = draft.antecedentesFamiliares ?? '';
+      _medicamentosAlergiasController.text = draft.medicamentosAlergias ?? '';
+      _habitosHistoriaOdontologicaController.text = draft.habitosHistoriaOdontologica ?? '';
+      _observacoesController.text = draft.observacoesGerais ?? '';
+      _diagnosticoController.text = draft.diagnostico ?? '';
+      _planoController.text = draft.planoTratamento ?? '';
+      _necessitaEncaminhamento = draft.necessitaEncaminhamento;
+      _especialidadeEncaminhamentoController.text = draft.especialidadeEncaminhamentoId?.toString() ?? '';
+      _motivoEncaminhamentoController.text = draft.motivoEncaminhamento ?? '';
+    }
+    if (widget.readOnly) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadVitalSigns());
+    }
+  }
+
+  Future<void> _loadVitalSigns() async {
+    try {
+      final records = await context
+          .read<AtendimentoViewModel>()
+          .listVitalSigns(widget.atendimentoId);
+      if (!mounted || records.isEmpty) return;
+      final latest = records.last.toJson();
+      for (final entry in latest.entries) {
+        final controller = _vitals[entry.key];
+        if (controller != null && entry.value != null) {
+          controller.text = entry.value.toString();
+        }
+      }
+      setState(() {});
+    } catch (_) {
+      // A ficha continua legível mesmo quando a API de sinais vitais falha.
+    }
+  }
 
   @override
   void dispose() {
@@ -109,12 +158,16 @@ class _SemiologiaFormViewState extends State<SemiologiaFormView> {
 
   Future<bool> _saveVitalSigns(AtendimentoViewModel atendimento) async {
     if (_vitalsSaved) return true;
+    if (_vitalSigns().toJson().isEmpty) return true;
     if (!_vitalsValid()) {
       _showMessage('Confira os valores numéricos dos sinais vitais.');
       return false;
     }
     final hasValues = _vitalSigns().toJson().isNotEmpty;
-    final saved = await atendimento.saveVitalSigns(_vitalSigns());
+    final saved = await atendimento.saveVitalSigns(
+      _vitalSigns(),
+      atendimentoId: widget.atendimentoId,
+    );
     if (saved && hasValues) _vitalsSaved = true;
     return saved;
   }
@@ -181,7 +234,7 @@ class _SemiologiaFormViewState extends State<SemiologiaFormView> {
     );
     if (submitted && mounted) {
       _showMessage('Ficha enviada para aprovação.');
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      Navigator.of(context).pop(true);
     }
   }
 
@@ -195,9 +248,7 @@ class _SemiologiaFormViewState extends State<SemiologiaFormView> {
     final prontuarioId =
         widget.paciente.prontuarioId ??
         context.read<AtendimentoViewModel>().activeProntuarioId;
-    final canEdit =
-        widget.ficha.status == StatusFicha.rascunho ||
-        widget.ficha.status == StatusFicha.correcaoSolicitada;
+    final canEdit = _canEdit;
     if (prontuarioId == null) {
       return const [
         Text('O prontuário deste paciente não foi retornado pela API.'),
@@ -231,35 +282,55 @@ class _SemiologiaFormViewState extends State<SemiologiaFormView> {
     final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ficha de Semiologia'),
-        backgroundColor: colors.primary,
-        foregroundColor: Colors.white,
-        actions: [
-          const ThemeToggleButton(),
-          TextButton.icon(
+      backgroundColor: StudentPageStyle.background(context),
+      body: Theme(
+        data: StudentPageStyle.readableTheme(context),
+        child: Column(children: [
+          StudentPageHeader(
+            title: _canEdit ? 'Ficha de Semiologia' : 'Visualizar ficha',
+            subtitle: 'Avaliação inicial · ${widget.paciente.nomeCompleto ?? 'Paciente'}',
+            actions: _canEdit ? [
+              TextButton.icon(
             onPressed: _saveDraft,
-            icon: const Icon(Icons.save_outlined, color: Colors.white),
+            icon: const Icon(Icons.save_outlined, color: Colors.white, size: 19),
             label: const Text(
               'Salvar rascunho',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: Colors.white, fontSize: 12),
             ),
           ),
-        ],
-      ),
-      body: Form(
+            ] : const [],
+          ),
+          Expanded(child: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             _patientHeader(context),
             const SizedBox(height: 16),
+            if (widget.teacherComment?.trim().isNotEmpty == true) ...[
+              Card(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF3A1B24)
+                    : const Color(0xFFFFF1F0),
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.rate_review_outlined,
+                    color: Color(0xFFD92332),
+                  ),
+                  title: const Text('Observação do professor'),
+                  subtitle: Text(widget.teacherComment!),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Card(
               color: colors.surfaceContainerHighest,
-              child: const Padding(
-                padding: EdgeInsets.all(14),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
                 child: Text(
-                  'O rascunho salva os campos disponíveis nesta ficha. Consentimento e assinatura ainda não fazem parte do fluxo.',
+                  _canEdit
+                      ? 'O rascunho salva os campos disponíveis nesta ficha. Consentimento e assinatura ainda não fazem parte do fluxo.'
+                      : 'Ficha em modo de visualização. Os campos estão bloqueados para edição.',
                 ),
               ),
             ),
@@ -270,6 +341,7 @@ class _SemiologiaFormViewState extends State<SemiologiaFormView> {
               children: [
                 TextFormField(
                   controller: _queixaController,
+                  readOnly: !_canEdit,
                   maxLength: 200,
                   maxLines: 3,
                   decoration: const InputDecoration(
@@ -281,6 +353,7 @@ class _SemiologiaFormViewState extends State<SemiologiaFormView> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _historiaController,
+                  readOnly: !_canEdit,
                   maxLength: 1000,
                   maxLines: 5,
                   decoration: const InputDecoration(
@@ -401,11 +474,13 @@ class _SemiologiaFormViewState extends State<SemiologiaFormView> {
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Necessita encaminhamento'),
                   value: _necessitaEncaminhamento,
-                  onChanged: (value) =>
-                      setState(() => _necessitaEncaminhamento = value ?? false),
+                  onChanged: _canEdit
+                      ? (value) => setState(() => _necessitaEncaminhamento = value ?? false)
+                      : null,
                 ),
                 TextFormField(
                   controller: _especialidadeEncaminhamentoController,
+                  readOnly: !_canEdit,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
                     labelText: 'ID da especialidade de destino',
@@ -442,7 +517,7 @@ class _SemiologiaFormViewState extends State<SemiologiaFormView> {
                 );
               },
             ),
-            Consumer<SemiologiaViewModel>(
+            if (_canEdit) Consumer<SemiologiaViewModel>(
               builder: (context, model, _) => ElevatedButton.icon(
                 onPressed: model.isSaving ? null : _submit,
                 icon: model.isSaving
@@ -460,6 +535,8 @@ class _SemiologiaFormViewState extends State<SemiologiaFormView> {
             ),
           ],
         ),
+          )),
+        ]),
       ),
     );
   }
@@ -486,6 +563,7 @@ class _SemiologiaFormViewState extends State<SemiologiaFormView> {
     padding: const EdgeInsets.only(bottom: 12),
     child: TextFormField(
       controller: _vitals[key],
+      readOnly: !_canEdit,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       decoration: InputDecoration(labelText: label, suffixText: suffix),
       validator: (value) {
@@ -505,6 +583,7 @@ class _SemiologiaFormViewState extends State<SemiologiaFormView> {
         padding: const EdgeInsets.only(bottom: 12),
         child: TextFormField(
           controller: controller,
+          readOnly: !_canEdit,
           maxLines: 3,
           decoration: InputDecoration(
             labelText: label,
@@ -521,6 +600,7 @@ class _SemiologiaFormViewState extends State<SemiologiaFormView> {
     padding: const EdgeInsets.only(bottom: 12),
     child: TextFormField(
       controller: controller,
+      readOnly: !_canEdit,
       minLines: 3,
       maxLines: 6,
       maxLength: 4000,

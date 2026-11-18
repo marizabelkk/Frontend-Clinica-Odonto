@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../data/models/odontograma_dto.dart';
 import '../../data/viewmodels/odontograma_view_model.dart';
 import '../widgets/theme_toggle_button.dart';
@@ -100,12 +101,13 @@ class _OdontogramaViewState extends State<OdontogramaView> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Odontograma'),
-        backgroundColor: colors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: dark ? AppTheme.darkSurface : colors.primary,
+        foregroundColor: dark ? AppTheme.gold : Colors.white,
         actions: [
           IconButton(
             tooltip: 'Recarregar',

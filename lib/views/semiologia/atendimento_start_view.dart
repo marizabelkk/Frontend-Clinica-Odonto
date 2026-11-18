@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../data/models/paciente_dto.dart';
 import '../../data/viewmodels/atendimento_view_model.dart';
 import 'semiologia_form_view.dart';
-import '../widgets/theme_toggle_button.dart';
+import '../widgets/student_page_header.dart';
 
 class AtendimentoStartView extends StatefulWidget {
   const AtendimentoStartView({
@@ -38,8 +38,8 @@ class _AtendimentoStartViewState extends State<AtendimentoStartView> {
     if (!context.mounted || ficha == null || viewModel.atendimento == null) {
       return;
     }
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
+    final submitted = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
         builder: (_) => SemiologiaFormView(
           paciente: widget.paciente,
           atendimentoId: viewModel.atendimento!.id,
@@ -47,6 +47,9 @@ class _AtendimentoStartViewState extends State<AtendimentoStartView> {
         ),
       ),
     );
+    if (submitted == true && context.mounted) {
+      await viewModel.loadMyAttendances();
+    }
   }
 
   @override
@@ -54,13 +57,15 @@ class _AtendimentoStartViewState extends State<AtendimentoStartView> {
     final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Novo atendimento'),
-        actions: const [ThemeToggleButton()],
-        backgroundColor: colors.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: ListView(
+      backgroundColor: StudentPageStyle.background(context),
+      body: Theme(
+        data: StudentPageStyle.readableTheme(context),
+        child: Column(children: [
+          const StudentPageHeader(
+            title: 'Novo atendimento',
+            subtitle: 'Avaliação inicial de Semiologia',
+          ),
+          Expanded(child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           Text(
@@ -75,8 +80,8 @@ class _AtendimentoStartViewState extends State<AtendimentoStartView> {
           Card(
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: colors.primary.withValues(alpha: 0.1),
-                foregroundColor: colors.primary,
+                backgroundColor: StudentPageStyle.accent(context).withValues(alpha: 0.12),
+                foregroundColor: StudentPageStyle.accent(context),
                 child: const Icon(Icons.person_outline),
               ),
               title: Text(widget.paciente.nomeCompleto ?? 'Paciente'),
@@ -162,6 +167,8 @@ class _AtendimentoStartViewState extends State<AtendimentoStartView> {
             ),
           ),
         ],
+          )),
+        ]),
       ),
     );
   }

@@ -3,11 +3,28 @@ import 'package:dio/dio.dart';
 import '../../core/network/api_client.dart';
 import '../models/atendimento_dto.dart';
 import '../models/especialidade_dto.dart';
+import '../models/ficha_semiologia_dto.dart';
 
 class AtendimentoRepository {
   const AtendimentoRepository({required this.apiClient});
 
   final ApiClient apiClient;
+
+  Future<List<AtendimentoDto>> listMine({StatusFicha? status}) async {
+    final response = await apiClient.dio.get<Object?>(
+      'atendimentos/meus',
+      queryParameters: status == null ? null : {'status': status.apiValue},
+    );
+    final data = response.data;
+    if (data is! List) {
+      throw const FormatException(
+        'A API não retornou a lista dos atendimentos do aluno.',
+      );
+    }
+    return data
+        .map((item) => AtendimentoDto.fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList(growable: false);
+  }
 
   Future<List<EspecialidadeDto>> listEspecialidades() async {
     final response = await apiClient.dio.get<Object?>('especialidades');
@@ -57,6 +74,28 @@ class AtendimentoRepository {
     );
   }
 
+  Future<void> deleteAttendance(int attendanceId) async {
+    await apiClient.dio.delete<void>('atendimentos/$attendanceId');
+  }
+
+  Future<List<SinaisVitaisDto>> listVitalSigns(int attendanceId) async {
+    final response = await apiClient.dio.get<Object?>(
+      'atendimentos/$attendanceId/sinais-vitais',
+    );
+    if (response.data is! List) {
+      throw const FormatException(
+        'A API não retornou a lista de sinais vitais no formato esperado.',
+      );
+    }
+    return (response.data as List)
+        .map(
+          (item) => SinaisVitaisDto.fromJson(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList(growable: false);
+  }
+
   static String userMessageFor(Object error) {
     if (error is FormatException) {
       return 'A resposta da API não corresponde ao contrato esperado.';
@@ -69,6 +108,9 @@ class AtendimentoRepository {
       }
       if (code == 404) {
         return 'O prontuário, atendimento ou especialidade não foi encontrado.';
+      }
+      if (code == 409) {
+        return 'Este atendimento possui uma ficha vinculada e não pode ser excluído. Exclua primeiro o rascunho, se permitido.';
       }
       if (code == 422) {
         return 'A API rejeitou os dados enviados. Revise os campos.';
