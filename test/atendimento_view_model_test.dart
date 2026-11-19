@@ -5,9 +5,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ondonto_uninassau/core/constants/api_constants.dart';
 import 'package:ondonto_uninassau/core/network/api_client.dart';
-import 'package:ondonto_uninassau/data/repositories/atendimento_repository.dart';
-import 'package:ondonto_uninassau/data/repositories/semiologia_repository.dart';
-import 'package:ondonto_uninassau/data/viewmodels/atendimento_view_model.dart';
+import 'package:ondonto_uninassau/services/repositories/atendimento_repository.dart';
+import 'package:ondonto_uninassau/services/repositories/semiologia_repository.dart';
+import 'package:ondonto_uninassau/view_models/atendimento_view_model.dart';
 
 void main() {
   test('uses the active Semiologia ID returned by the API', () async {

@@ -5,14 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ondonto_uninassau/core/constants/api_constants.dart';
 import 'package:ondonto_uninassau/core/network/api_client.dart';
 import 'package:ondonto_uninassau/core/network/auth_token_store.dart';
-import 'package:ondonto_uninassau/data/models/paciente_dto.dart';
-import 'package:ondonto_uninassau/data/models/usuario_dto.dart';
-import 'package:ondonto_uninassau/data/repositories/auth_repository.dart';
-import 'package:ondonto_uninassau/data/viewmodels/auth_view_model.dart';
+import 'package:ondonto_uninassau/models/paciente_model.dart';
+import 'package:ondonto_uninassau/models/usuario_model.dart';
+import 'package:ondonto_uninassau/services/repositories/autenticacao_repository.dart';
+import 'package:ondonto_uninassau/view_models/autenticacao_view_model.dart';
 
 void main() {
   test('API profile parser recognizes reception', () {
-    final user = UsuarioDto.fromJson({
+    final user = UsuarioModel.fromJson({
       'id': 5,
       'nome': 'Usuária da recepção',
       'email': 'recepcao@uninassau.edu.br',
@@ -30,8 +30,8 @@ void main() {
         ..httpClientAdapter = adapter,
       tokenProvider: () async => tokenStore.accessToken,
     );
-    final viewModel = AuthViewModel(
-      repository: AuthRepository(apiClient: apiClient, tokenStore: tokenStore),
+    final viewModel = AutenticacaoViewModel(
+      repository: AutenticacaoRepository(apiClient: apiClient, tokenStore: tokenStore),
     );
 
     final success = await viewModel.login(
@@ -55,7 +55,7 @@ void main() {
   });
 
   test('patient DTO uses the contract snake_case fields', () {
-    const patient = PacienteDto(
+    const patient = PacienteModel(
       nomeCompleto: 'Maria Oliveira',
       cpf: '12345678901',
       rg: 'MG123456',
@@ -73,7 +73,7 @@ void main() {
       'celular': '31999998888',
     });
     expect(
-      PacienteDto.fromJson({
+      PacienteModel.fromJson({
         'paciente_id': 10,
         'prontuario_id': 8,
         'nome_completo': 'Maria Oliveira',

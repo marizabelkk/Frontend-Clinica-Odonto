@@ -4,10 +4,10 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ondonto_uninassau/core/constants/api_constants.dart';
 import 'package:ondonto_uninassau/core/network/api_client.dart';
-import 'package:ondonto_uninassau/data/models/atendimento_dto.dart';
-import 'package:ondonto_uninassau/data/models/ficha_semiologia_dto.dart';
-import 'package:ondonto_uninassau/data/repositories/atendimento_repository.dart';
-import 'package:ondonto_uninassau/data/repositories/semiologia_repository.dart';
+import 'package:ondonto_uninassau/models/atendimento_model.dart';
+import 'package:ondonto_uninassau/models/ficha_semiologia_model.dart';
+import 'package:ondonto_uninassau/services/repositories/atendimento_repository.dart';
+import 'package:ondonto_uninassau/services/repositories/semiologia_repository.dart';
 
 void main() {
   test(
@@ -26,7 +26,7 @@ void main() {
       );
       await attendanceRepository.saveVitalSigns(
         atendimentoId: attendance.id,
-        sinaisVitais: const SinaisVitaisDto(
+        sinaisVitais: const SinaisVitaisModel(
           pressaoSistolica: 120,
           pressaoDiastolica: 80,
           pulso: 72,
@@ -40,7 +40,7 @@ void main() {
       final ficha = await semiologiaRepository.createFicha(attendance.id);
       await semiologiaRepository.saveDraft(
         fichaId: ficha.id,
-        draft: const SemiologiaDraftDto(
+        draft: const SemiologiaDraftModel(
           queixaPrincipal: 'Dor',
           historiaDoencaAtual: 'Relata dor há cinco dias.',
           antecedentesFamiliares: 'Diabetes na família.',

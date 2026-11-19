@@ -6,11 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ondonto_uninassau/core/network/api_client.dart';
 import 'package:ondonto_uninassau/core/network/auth_token_store.dart';
-import 'package:ondonto_uninassau/data/repositories/atendimento_repository.dart';
-import 'package:ondonto_uninassau/data/repositories/auth_repository.dart';
-import 'package:ondonto_uninassau/data/repositories/patient_repository.dart';
-import 'package:ondonto_uninassau/data/repositories/semiologia_repository.dart';
-import 'package:ondonto_uninassau/data/repositories/professor_repository.dart';
+import 'package:ondonto_uninassau/services/repositories/atendimento_repository.dart';
+import 'package:ondonto_uninassau/services/repositories/autenticacao_repository.dart';
+import 'package:ondonto_uninassau/services/repositories/paciente_repository.dart';
+import 'package:ondonto_uninassau/services/repositories/semiologia_repository.dart';
+import 'package:ondonto_uninassau/services/repositories/professor_repository.dart';
 import 'package:ondonto_uninassau/main.dart';
 
 void main() {
@@ -143,7 +143,7 @@ Widget _app(String perfil) {
   final tokenStore = AuthTokenStore();
   final dio = Dio(BaseOptions(baseUrl: 'https://test.invalid/api/v1'))
     ..httpClientAdapter = _LoginAdapter(perfil);
-  final repository = AuthRepository(
+  final repository = AutenticacaoRepository(
     apiClient: ApiClient(
       dio: dio,
       tokenProvider: () async => tokenStore.accessToken,
@@ -152,7 +152,7 @@ Widget _app(String perfil) {
   );
   return MyApp(
     authRepository: repository,
-    patientRepository: PatientRepository(apiClient: repository.apiClient),
+    patientRepository: PacienteRepository(apiClient: repository.apiClient),
     atendimentoRepository: AtendimentoRepository(
       apiClient: repository.apiClient,
     ),

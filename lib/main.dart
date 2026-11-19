@@ -5,31 +5,31 @@ import 'core/network/api_client.dart';
 import 'core/network/auth_token_store.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/brand_background.dart';
-import 'data/repositories/auth_repository.dart';
-import 'data/repositories/atendimento_repository.dart';
-import 'data/repositories/odontograma_repository.dart';
-import 'data/repositories/patient_repository.dart';
-import 'data/repositories/semiologia_repository.dart';
-import 'data/repositories/professor_repository.dart';
-import 'data/viewmodels/atendimento_view_model.dart';
-import 'data/viewmodels/auth_view_model.dart';
-import 'data/viewmodels/odontograma_view_model.dart';
-import 'data/viewmodels/theme_view_model.dart';
-import 'data/viewmodels/patient_view_model.dart';
-import 'data/viewmodels/semiologia_view_model.dart';
-import 'data/viewmodels/professor_view_model.dart';
-import 'views/auth/login_view.dart';
+import 'services/repositories/autenticacao_repository.dart';
+import 'services/repositories/atendimento_repository.dart';
+import 'services/repositories/odontograma_repository.dart';
+import 'services/repositories/paciente_repository.dart';
+import 'services/repositories/semiologia_repository.dart';
+import 'services/repositories/professor_repository.dart';
+import 'view_models/atendimento_view_model.dart';
+import 'view_models/autenticacao_view_model.dart';
+import 'view_models/odontograma_view_model.dart';
+import 'view_models/tema_view_model.dart';
+import 'view_models/paciente_view_model.dart';
+import 'view_models/semiologia_view_model.dart';
+import 'view_models/professor_view_model.dart';
+import 'views/autenticacao/entrar_view.dart';
 
 void main() {
   final tokenStore = AuthTokenStore();
   final apiClient = ApiClient(
     tokenProvider: () async => tokenStore.accessToken,
   );
-  final authRepository = AuthRepository(
+  final authRepository = AutenticacaoRepository(
     apiClient: apiClient,
     tokenStore: tokenStore,
   );
-  final patientRepository = PatientRepository(apiClient: apiClient);
+  final patientRepository = PacienteRepository(apiClient: apiClient);
   final atendimentoRepository = AtendimentoRepository(apiClient: apiClient);
   final semiologiaRepository = SemiologiaRepository(apiClient: apiClient);
   final professorRepository = ProfessorRepository(apiClient: apiClient);
@@ -56,8 +56,8 @@ class MyApp extends StatelessWidget {
     super.key,
   });
 
-  final AuthRepository authRepository;
-  final PatientRepository patientRepository;
+  final AutenticacaoRepository authRepository;
+  final PacienteRepository patientRepository;
   final AtendimentoRepository atendimentoRepository;
   final SemiologiaRepository semiologiaRepository;
   final ProfessorRepository professorRepository;
@@ -68,12 +68,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MultiProvider(
     providers: [
-      ChangeNotifierProvider(create: (_) => ThemeViewModel()..load()),
+      ChangeNotifierProvider(create: (_) => TemaViewModel()..load()),
       ChangeNotifierProvider(
-        create: (_) => AuthViewModel(repository: authRepository),
+        create: (_) => AutenticacaoViewModel(repository: authRepository),
       ),
       ChangeNotifierProvider(
-        create: (_) => PatientViewModel(repository: patientRepository),
+        create: (_) => PacienteViewModel(repository: patientRepository),
       ),
       ChangeNotifierProvider(
         create: (_) => AtendimentoViewModel(
@@ -96,7 +96,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
     ],
-    child: Consumer<ThemeViewModel>(
+    child: Consumer<TemaViewModel>(
       builder: (context, theme, _) => MaterialApp(
         title: 'Prontuário Odontológico',
         debugShowCheckedModeBanner: false,
@@ -105,7 +105,7 @@ class MyApp extends StatelessWidget {
         themeMode: theme.mode,
         builder: (context, child) =>
             BrandBackground(child: child ?? const SizedBox.shrink()),
-        home: const LoginView(),
+        home: const EntrarView(),
       ),
     ),
   );

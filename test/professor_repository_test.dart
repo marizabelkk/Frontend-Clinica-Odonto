@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:ondonto_uninassau/core/network/api_client.dart';
-import 'package:ondonto_uninassau/data/models/professor_ficha_dto.dart';
-import 'package:ondonto_uninassau/data/repositories/professor_repository.dart';
-import 'package:ondonto_uninassau/data/viewmodels/theme_view_model.dart';
-import 'package:ondonto_uninassau/data/viewmodels/professor_view_model.dart';
-import 'package:ondonto_uninassau/views/professor/professor_review_view.dart';
+import 'package:ondonto_uninassau/models/professor_ficha_model.dart';
+import 'package:ondonto_uninassau/services/repositories/professor_repository.dart';
+import 'package:ondonto_uninassau/view_models/tema_view_model.dart';
+import 'package:ondonto_uninassau/view_models/professor_view_model.dart';
+import 'package:ondonto_uninassau/views/professor/revisar_fichas_view.dart';
 
 void main() {
   test(
@@ -86,8 +86,8 @@ void main() {
       ChangeNotifierProvider.value(
         value: model,
         child: ChangeNotifierProvider(
-          create: (_) => ThemeViewModel(),
-          child: const MaterialApp(home: ProfessorReviewView()),
+          create: (_) => TemaViewModel(),
+          child: const MaterialApp(home: RevisarFichasView()),
         ),
       ),
     );

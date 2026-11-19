@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ondonto_uninassau/core/constants/api_constants.dart';
 import 'package:ondonto_uninassau/core/network/api_client.dart';
 import 'package:ondonto_uninassau/core/network/auth_token_store.dart';
-import 'package:ondonto_uninassau/data/models/paciente_dto.dart';
-import 'package:ondonto_uninassau/data/repositories/patient_repository.dart';
+import 'package:ondonto_uninassau/models/paciente_model.dart';
+import 'package:ondonto_uninassau/services/repositories/paciente_repository.dart';
 
 void main() {
   test('uses the documented patient endpoints and query names', () async {
@@ -17,12 +17,12 @@ void main() {
         ..httpClientAdapter = adapter,
       tokenProvider: () async => tokenStore.accessToken,
     );
-    final repository = PatientRepository(apiClient: apiClient);
+    final repository = PacienteRepository(apiClient: apiClient);
 
     final byName = await repository.searchPatients(nome: 'Maria');
     final byCpf = await repository.searchPatients(cpf: '123.456.789-01');
     final created = await repository.createPatient(
-      const PacienteDto(nomeCompleto: 'Maria Oliveira', cpf: '12345678901'),
+      const PacienteModel(nomeCompleto: 'Maria Oliveira', cpf: '12345678901'),
     );
     final patient = await repository.getPatient(10);
     final prontuario = await repository.getProntuario(10);

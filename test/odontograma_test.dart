@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ondonto_uninassau/core/constants/api_constants.dart';
 import 'package:ondonto_uninassau/core/network/api_client.dart';
-import 'package:ondonto_uninassau/data/models/odontograma_dto.dart';
-import 'package:ondonto_uninassau/data/repositories/odontograma_repository.dart';
-import 'package:ondonto_uninassau/data/viewmodels/odontograma_view_model.dart';
-import 'package:ondonto_uninassau/views/odontograma/tooth_map.dart';
+import 'package:ondonto_uninassau/models/odontograma_model.dart';
+import 'package:ondonto_uninassau/services/repositories/odontograma_repository.dart';
+import 'package:ondonto_uninassau/view_models/odontograma_view_model.dart';
+import 'package:ondonto_uninassau/widgets/odontograma/mapa_dentes.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -17,25 +17,25 @@ void main() {
     expect(image.lengthInBytes, greaterThan(0));
   });
 
-  group('ToothMap', () {
+  group('MapaDentes', () {
     test('cobre os 52 dentes da numeração FDI (permanentes e decíduos)', () {
-      expect(ToothMap.shapes.length, 52);
+      expect(MapaDentes.shapes.length, 52);
       expect(
-        ToothMap.shapes.keys,
+        MapaDentes.shapes.keys,
         containsAll([11, 28, 31, 48, 51, 65, 71, 85]),
       );
     });
 
     test('resolve o dente tocado a partir da posição na imagem', () {
-      expect(ToothMap.toothAt(342, 76), 11);
-      expect(ToothMap.toothAt(155, 348), 18);
-      expect(ToothMap.toothAt(368, 666), 71);
-      expect(ToothMap.toothAt(5, 5), isNull);
+      expect(MapaDentes.toothAt(342, 76), 11);
+      expect(MapaDentes.toothAt(155, 348), 18);
+      expect(MapaDentes.toothAt(368, 666), 71);
+      expect(MapaDentes.toothAt(5, 5), isNull);
     });
 
     test('descreve dente decíduo e permanente', () {
-      expect(ToothMap.describe(16), 'Dente 16 · permanente');
-      expect(ToothMap.describe(55), 'Dente 55 · decíduo');
+      expect(MapaDentes.describe(16), 'Dente 16 · permanente');
+      expect(MapaDentes.describe(55), 'Dente 55 · decíduo');
     });
   });
 
