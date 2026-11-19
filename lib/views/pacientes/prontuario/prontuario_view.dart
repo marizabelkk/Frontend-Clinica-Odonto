@@ -14,6 +14,7 @@ import '../../odontograma/odontograma_view.dart';
 import '../../atendimentos/iniciar_atendimento_view.dart';
 import '../../atendimentos/semiologia/formulario_semiologia_view.dart';
 import '../../atendimentos/meus_atendimentos_view.dart';
+import '../cadastrar_paciente_view.dart';
 import '../../../widgets/navegacao_inferior_aluno.dart';
 import '../../../widgets/cabecalho_pagina_aluno.dart';
 
@@ -272,6 +273,23 @@ class _RecordContentState extends State<_RecordContent> {
     }
   }
 
+  Future<void> _editPatient() async {
+    final updated = await Navigator.of(context).push<PacienteModel>(
+      MaterialPageRoute<PacienteModel>(
+        builder: (_) => CadastrarPacienteView(
+          showStudentNavigation: widget.canStartAttendance,
+          paciente: paciente,
+        ),
+      ),
+    );
+    if (updated == null || !mounted) return;
+    await context.read<PacienteViewModel>().loadProntuario(widget.prontuario.pacienteId);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Cadastro atualizado.')),
+    );
+  }
+
   Future<bool> _confirmDelete(String description) async =>
       await showDialog<bool>(
         context: context,
@@ -396,6 +414,7 @@ class _RecordContentState extends State<_RecordContent> {
             prontuarioId: widget.prontuario.id,
             expanded: _showMore,
             onToggle: () => setState(() => _showMore = !_showMore),
+            onEdit: _editPatient,
             foreground: widget.foreground,
             muted: widget.muted,
             dark: widget.dark,
@@ -697,11 +716,12 @@ class _PillButton extends StatelessWidget {
 
 
 class _PatientProfileCard extends StatelessWidget {
-  const _PatientProfileCard({required this.paciente, required this.prontuarioId, required this.expanded, required this.onToggle, required this.foreground, required this.muted, required this.dark});
+  const _PatientProfileCard({required this.paciente, required this.prontuarioId, required this.expanded, required this.onToggle, required this.onEdit, required this.foreground, required this.muted, required this.dark});
   final PacienteModel paciente;
   final int prontuarioId;
   final bool expanded;
   final VoidCallback onToggle;
+  final VoidCallback onEdit;
   final Color foreground;
   final Color muted;
   final bool dark;
@@ -736,9 +756,9 @@ class _PatientProfileCard extends StatelessWidget {
               const SizedBox(height: 10),
               Wrap(spacing: 16, runSpacing: 6, children: [
                 if (paciente.celular != null)
-                  Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.call_outlined, size: 18, color: iconColor), const SizedBox(width: 6), Text(paciente.celular!, style: TextStyle(color: foreground, fontSize: 13))]),
+                  Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.call_outlined, size: 18, color: iconColor), const SizedBox(width: 6), Text(_formatPhone(paciente.celular), style: TextStyle(color: foreground, fontSize: 13))]),
                 if (paciente.rg != null)
-                  Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.badge_outlined, size: 18, color: iconColor), const SizedBox(width: 6), Text('RG: ${paciente.rg}', style: TextStyle(color: foreground, fontSize: 13))]),
+                  Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.badge_outlined, size: 18, color: iconColor), const SizedBox(width: 6), Text('RG: ${_formatRg(paciente.rg)}', style: TextStyle(color: foreground, fontSize: 13))]),
               ]),
             ],
           ])),
@@ -750,23 +770,28 @@ class _PatientProfileCard extends StatelessWidget {
             decoration: BoxDecoration(color: dark ? const Color(0xFF40350E) : const Color(0xFFFFF1C2), border: Border.all(color: AppTheme.gold), borderRadius: BorderRadius.circular(18)),
             child: Text('Código: ${prontuarioId.toString().padLeft(6, '0')}', style: TextStyle(color: dark ? AppTheme.darkText : AppTheme.navy, fontSize: 12.5, fontWeight: FontWeight.w700)),
           ),
-          Expanded(
-            child: Center(
-              child: TextButton.icon(
-                onPressed: onToggle,
-                icon: Icon(expanded ? Icons.expand_less : Icons.expand_more, size: 20),
-                label: Text(expanded ? 'Ver menos' : 'Ver mais'),
-                style: TextButton.styleFrom(foregroundColor: dark ? AppTheme.darkText : AppTheme.navy, textStyle: const TextStyle(fontWeight: FontWeight.w600)),
-              ),
-            ),
+          const Spacer(),
+          IconButton(
+            tooltip: 'Editar paciente',
+            onPressed: onEdit,
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(width: 38, height: 38),
+            padding: EdgeInsets.zero,
+            icon: Icon(Icons.edit_outlined, color: dark ? AppTheme.gold : AppTheme.navy, size: 21),
+          ),
+          TextButton.icon(
+            onPressed: onToggle,
+            icon: Icon(expanded ? Icons.expand_less : Icons.expand_more, size: 20),
+            label: Text(expanded ? 'Ver menos' : 'Ver mais'),
+            style: TextButton.styleFrom(foregroundColor: dark ? AppTheme.darkText : AppTheme.navy, textStyle: const TextStyle(fontWeight: FontWeight.w600)),
           ),
         ]),
         if (expanded) ...[
           Divider(color: border),
           _DetailLine(label: 'Nascimento', value: _formatBirth(paciente.dataNascimento), foreground: foreground, muted: muted),
           _DetailLine(label: 'Sexo/gênero', value: paciente.sexo ?? 'Não informado', foreground: foreground, muted: muted),
-          _DetailLine(label: 'Celular', value: paciente.celular ?? 'Não informado', foreground: foreground, muted: muted),
-          _DetailLine(label: 'RG', value: paciente.rg ?? 'Não informado', foreground: foreground, muted: muted),
+          _DetailLine(label: 'Celular', value: _formatPhone(paciente.celular), foreground: foreground, muted: muted),
+          _DetailLine(label: 'RG', value: _formatRg(paciente.rg), foreground: foreground, muted: muted),
         ],
       ]),
     );
@@ -1044,6 +1069,30 @@ String _maskCpf(String? cpf) {
   final digits = cpf.replaceAll(RegExp(r'\D'), '');
   if (digits.length != 11) return cpf;
   return '***.***.***-${digits.substring(9)}';
+}
+
+String _formatPhone(String? phone) {
+  if (phone == null || phone.trim().isEmpty) return 'Não informado';
+  final digits = phone.replaceAll(RegExp(r'\D'), '');
+  if (digits.length == 11) {
+    return '(${digits.substring(0, 2)}) ${digits.substring(2, 7)}-${digits.substring(7)}';
+  }
+  if (digits.length == 10) {
+    return '(${digits.substring(0, 2)}) ${digits.substring(2, 6)}-${digits.substring(6)}';
+  }
+  return phone;
+}
+
+String _formatRg(String? rg) {
+  if (rg == null || rg.trim().isEmpty) return 'Não informado';
+  final digits = rg.replaceAll(RegExp(r'\D'), '');
+  if (digits.length == 9) {
+    return '${digits.substring(0, 2)}.${digits.substring(2, 5)}.${digits.substring(5, 8)}-${digits.substring(8)}';
+  }
+  if (digits.length == 8) {
+    return '${digits.substring(0, 1)}.${digits.substring(1, 4)}.${digits.substring(4, 7)}-${digits.substring(7)}';
+  }
+  return rg;
 }
 
 String _formatBirth(String? value) {

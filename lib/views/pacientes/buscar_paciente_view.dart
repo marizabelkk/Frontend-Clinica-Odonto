@@ -512,7 +512,7 @@ class _PatientCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'CPF: ${paciente.cpf ?? 'Não informado'}',
+                      'CPF: ${_formatCpf(paciente.cpf)}',
                       style: TextStyle(color: muted, fontSize: 13),
                     ),
                     const SizedBox(height: 2),
@@ -550,6 +550,13 @@ String _formatDate(String? value) {
   final parsed = DateTime.tryParse(value);
   if (parsed == null) return value;
   return '${parsed.day.toString().padLeft(2, '0')}/${parsed.month.toString().padLeft(2, '0')}/${parsed.year}';
+}
+
+String _formatCpf(String? value) {
+  if (value == null || value.trim().isEmpty) return 'Não informado';
+  final digits = value.replaceAll(RegExp(r'\D'), '');
+  if (digits.length != 11) return value;
+  return '${digits.substring(0, 3)}.${digits.substring(3, 6)}.${digits.substring(6, 9)}-${digits.substring(9)}';
 }
 
 class _SearchMessage extends StatelessWidget {

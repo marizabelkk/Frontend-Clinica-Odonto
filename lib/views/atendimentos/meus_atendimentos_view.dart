@@ -136,6 +136,7 @@ class _MeusAtendimentosViewState extends State<MeusAtendimentosView> {
                         muted: muted,
                         border: border,
                         onOpen: () => _openPatient(items[index]),
+                        onView: () => _viewFicha(items[index]),
                         onEdit: () => _editFicha(items[index]),
                         onDelete: () => items[index].status == StatusFicha.rascunho
                             ? _deleteDraft(items[index])
@@ -242,6 +243,30 @@ class _MeusAtendimentosViewState extends State<MeusAtendimentosView> {
     if (mounted && changed == true) context.read<AtendimentoViewModel>().loadMyAttendances();
   }
 
+  Future<void> _viewFicha(MeuAtendimentoModel item) async {
+    final fichaId = item.atendimento.fichaId;
+    final patient = item.paciente;
+    if (fichaId == null || patient == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('NÃ£o foi possÃ­vel localizar a ficha deste atendimento.')));
+      return;
+    }
+    final model = context.read<SemiologiaViewModel>();
+    final ficha = await model.loadFicha(fichaId);
+    if (!mounted) return;
+    if (ficha == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(model.errorMessage ?? 'NÃ£o foi possÃ­vel abrir a ficha.')));
+      return;
+    }
+    await Navigator.of(context).push<void>(MaterialPageRoute<void>(
+      builder: (_) => FormularioSemiologiaView(
+        paciente: patient,
+        atendimentoId: item.atendimento.id,
+        ficha: ficha,
+        readOnly: true,
+      ),
+    ));
+  }
+
   Future<bool> _confirmDelete(String description) async =>
       await showDialog<bool>(
         context: context,
@@ -304,13 +329,14 @@ class _MeusAtendimentosViewState extends State<MeusAtendimentosView> {
 }
 
 class _AttendanceCard extends StatelessWidget {
-  const _AttendanceCard({required this.item, required this.dark, required this.foreground, required this.muted, required this.border, required this.onOpen, required this.onEdit, required this.onDelete});
+  const _AttendanceCard({required this.item, required this.dark, required this.foreground, required this.muted, required this.border, required this.onOpen, required this.onView, required this.onEdit, required this.onDelete});
   final MeuAtendimentoModel item;
   final bool dark;
   final Color foreground;
   final Color muted;
   final Color border;
   final VoidCallback onOpen;
+  final VoidCallback onView;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -351,6 +377,13 @@ class _AttendanceCard extends StatelessWidget {
                 _Metadata(icon: Icons.calendar_today_outlined, text: date, dark: dark, muted: muted),
                 _Metadata(icon: Icons.description_outlined, text: 'Prontuário: ${item.atendimento.prontuarioId?.toString().padLeft(6, '0') ?? '—'}', dark: dark, muted: muted),
               ])),
+              if (item.atendimento.fichaId != null)
+                TextButton.icon(
+                  onPressed: onView,
+                  icon: Icon(Icons.visibility_outlined, size: 17, color: dark ? AppTheme.gold : AppTheme.navy),
+                  label: Text('Visualizar', style: TextStyle(color: dark ? AppTheme.gold : AppTheme.navy, fontSize: 12, fontWeight: FontWeight.w700)),
+                  style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 7), minimumSize: const Size(0, 34), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                ),
               if (editable)
                 IconButton(tooltip: 'Editar ficha', onPressed: onEdit, icon: Icon(Icons.edit_outlined, color: dark ? AppTheme.gold : AppTheme.navy, size: 20), visualDensity: VisualDensity.compact),
               if (status == StatusFicha.rascunho || status == null)
@@ -361,8 +394,8 @@ class _AttendanceCard extends StatelessWidget {
                   onPressed: onDelete,
                   icon: const Icon(Icons.delete_outline, color: Color(0xFFD92332), size: 20),
                   visualDensity: VisualDensity.compact,
-                )
-              else if (!editable)
+                ),
+              if (!editable && status != null)
                 Icon(Icons.chevron_right, color: dark ? AppTheme.gold : AppTheme.navy, size: 24),
             ]),
             if (item.atendimento.observacaoCorrecao?.trim().isNotEmpty == true)

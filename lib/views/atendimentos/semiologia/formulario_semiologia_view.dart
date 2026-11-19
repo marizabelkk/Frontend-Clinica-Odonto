@@ -402,26 +402,6 @@ class _FormularioSemiologiaViewState extends State<FormularioSemiologiaView> {
                                   ),
                                   const SizedBox(height: 12),
                                 ],
-                                Container(
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    color: _softBox(dark),
-                                    border: Border(left: const BorderSide(color: AppTheme.gold, width: 4), top: BorderSide(color: _lineColor(dark)), right: BorderSide(color: _lineColor(dark)), bottom: BorderSide(color: _lineColor(dark))),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    Icon(Icons.info_outline, color: _link(dark), size: 24),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        _canEdit
-                                            ? 'O rascunho salva os campos disponíveis nesta ficha. Consentimento e assinatura ainda não fazem parte do fluxo.'
-                                            : 'Ficha em modo de visualização. Os campos estão bloqueados para edição.',
-                                        style: TextStyle(color: _mutedColor(dark), fontSize: 13.5, height: 1.4),
-                                      ),
-                                    ),
-                                  ]),
-                                ),
                                 const SizedBox(height: 16),
                                 _card(1, 'Queixa principal e história da doença atual', [
                                   _labeled('Queixa principal',
@@ -765,23 +745,32 @@ class _CabecalhoFicha extends StatelessWidget {
           bottom: false,
           child: SizedBox(
             height: 64,
-            child: Row(children: [
-              TextButton.icon(
-                onPressed: () => Navigator.of(context).maybePop(),
-                icon: const Icon(Icons.chevron_left, size: 30),
-                label: const Text('Voltar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                style: TextButton.styleFrom(foregroundColor: Colors.white, padding: const EdgeInsets.only(left: 6, right: 8)),
-              ),
-              Expanded(
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 110),
+                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 2),
                   Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withValues(alpha: .92), fontSize: 12.5)),
-                ]),
-              ),
-              ...actions,
-              if (actions.isEmpty) const SizedBox(width: 12),
-            ]),
+                  ]),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      icon: const Icon(Icons.chevron_left, size: 30),
+                      label: const Text('Voltar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      style: TextButton.styleFrom(foregroundColor: Colors.white, padding: const EdgeInsets.only(left: 6, right: 8)),
+                    ),
+                    if (actions.isNotEmpty)
+                      Row(mainAxisSize: MainAxisSize.min, children: actions),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       );

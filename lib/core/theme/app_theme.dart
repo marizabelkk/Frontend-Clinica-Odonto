@@ -51,6 +51,14 @@ abstract final class AppTheme {
       borderRadius: BorderRadius.circular(14),
       borderSide: BorderSide(color: border),
     );
+    final dialogShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(20),
+      side: BorderSide(color: border),
+    );
+    final buttonShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    );
+    final actionColor = brightness == Brightness.dark ? gold : primary;
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
@@ -67,21 +75,79 @@ abstract final class AppTheme {
         bodyMedium: TextStyle(color: foreground),
         titleLarge: TextStyle(color: foreground, fontWeight: FontWeight.w700),
       ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: brightness == Brightness.dark ? 0 : 8,
+        shape: dialogShape,
+        titleTextStyle: TextStyle(
+          color: foreground,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+        ),
+        contentTextStyle: TextStyle(color: foreground, fontSize: 14),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: surface,
+        modalBackgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: brightness == Brightness.dark ? 0 : 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          side: BorderSide(color: border),
+        ),
+        showDragHandle: true,
+        dragHandleColor: border,
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: field,
         hintStyle: TextStyle(color: foreground.withValues(alpha: 0.62)),
         border: fieldBorder,
         enabledBorder: fieldBorder,
+        disabledBorder: fieldBorder,
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFD92332)),
+        ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: primary, width: 1.5),
         ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFD92332), width: 1.5),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: actionColor,
+          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+          shape: buttonShape,
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: primary,
+          foregroundColor: brightness == Brightness.dark ? navy : Colors.white,
+          minimumSize: const Size(48, 44),
+          shape: buttonShape,
+          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: actionColor,
+          side: BorderSide(color: border),
+          minimumSize: const Size(48, 44),
+          shape: buttonShape,
+          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: navy,
-          foregroundColor: Colors.white,
+          backgroundColor: primary,
+          foregroundColor: brightness == Brightness.dark ? navy : Colors.white,
           minimumSize: const Size(48, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
