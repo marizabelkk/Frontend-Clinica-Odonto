@@ -356,9 +356,7 @@ class _BuscarPacienteViewState extends State<BuscarPacienteView> {
                                 onTap: widget.allowOpenRecord
                                     ? () => _openRecord(patients[index])
                                     : null,
-                                onEdit: widget.allowOpenRecord
-                                    ? null
-                                    : () => _editPatient(patients[index]),
+                                onEdit: () => _editPatient(patients[index]),
                                 onDelete: widget.allowOpenRecord
                                     ? null
                                     : () => _deletePatient(patients[index]),
@@ -527,30 +525,13 @@ class _PatientCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (onEdit != null || onDelete != null)
-                PopupMenuButton<String>(
-                  tooltip: 'Ações do paciente',
-                  enabled: !isDeleting,
-                  onSelected: (value) =>
-                      value == 'edit' ? onEdit?.call() : onDelete?.call(),
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: ListTile(
-                        leading: Icon(Icons.edit_outlined),
-                        title: Text('Editar'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: ListTile(
-                        leading: Icon(Icons.delete_outline, color: Colors.red),
-                        title: Text('Excluir'),
-                      ),
-                    ),
-                  ],
-                )
-              else if (onTap != null)
+              if (onEdit != null || onDelete != null) ...[
+                IconButton(tooltip: 'Editar paciente', onPressed: isDeleting ? null : onEdit, visualDensity: VisualDensity.compact, icon: Icon(Icons.edit_outlined, color: dark ? AppTheme.gold : AppTheme.navy, size: 21)),
+                if (onDelete != null)
+                  IconButton(tooltip: 'Excluir paciente', onPressed: isDeleting ? null : onDelete, visualDensity: VisualDensity.compact, icon: const Icon(Icons.delete_outline, color: Colors.red, size: 21)),
+                if (onTap != null)
+                  Icon(Icons.chevron_right, color: dark ? AppTheme.gold : AppTheme.navy, size: 27),
+              ]              else if (onTap != null)
                 Icon(
                   Icons.chevron_right,
                   color: dark ? AppTheme.gold : AppTheme.navy,
