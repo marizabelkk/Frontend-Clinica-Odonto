@@ -27,9 +27,9 @@ void main() {
     });
 
     test('resolve o dente tocado a partir da posição na imagem', () {
-      expect(MapaDentes.toothAt(342, 76), 11);
-      expect(MapaDentes.toothAt(155, 348), 18);
-      expect(MapaDentes.toothAt(368, 666), 71);
+      expect(MapaDentes.toothAt(462, 199), 11);
+      expect(MapaDentes.toothAt(72, 199), 18);
+      expect(MapaDentes.toothAt(538, 499), 71);
       expect(MapaDentes.toothAt(5, 5), isNull);
     });
 

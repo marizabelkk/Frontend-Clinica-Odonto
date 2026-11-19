@@ -20,7 +20,7 @@ enum FaceDente {
   );
 }
 
-/// Defeito/condição do catálogo (`GET condicoes-odontologicas`).
+/// Condição do catálogo (`GET condicoes-odontologicas`).
 class CondicaoOdontologicaModel {
   const CondicaoOdontologicaModel({
     required this.id,
@@ -40,7 +40,7 @@ class CondicaoOdontologicaModel {
       );
 }
 
-/// Um defeito registrado em um dente/face durante um atendimento.
+/// Uma condição registrada em um dente/face durante um atendimento.
 class OdontogramaRegistroModel {
   const OdontogramaRegistroModel({
     required this.id,

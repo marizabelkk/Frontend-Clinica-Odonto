@@ -256,7 +256,7 @@ class _FormularioSemiologiaViewState extends State<FormularioSemiologiaView> {
     }
     return [
       const Text(
-        'Marque no odontograma os defeitos de cada dente (cárie, fratura, restauração...).',
+        'Marque no odontograma as condições de cada dente (cárie, fratura, restauração...).',
       ),
       const SizedBox(height: 12),
       FilledButton.icon(

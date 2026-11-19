@@ -11,8 +11,8 @@ import '../pacientes/buscar_paciente_view.dart';
 import '../../widgets/odontograma/grafico_odontograma.dart';
 import '../../widgets/odontograma/mapa_dentes.dart';
 
-/// Tela do odontograma: toque no dente, veja os defeitos registrados abaixo e
-/// (quando `canEdit`) adicione, edite ou exclua defeitos do atendimento atual.
+/// Tela do odontograma: toque no dente, consulte as condi\u00e7\u00f5es registradas abaixo e
+/// (quando `canEdit`) adicione, edite ou exclua condi\u00e7\u00f5es do atendimento atual.
 class OdontogramaView extends StatefulWidget {
   const OdontogramaView({
     required this.prontuarioId,
@@ -41,7 +41,8 @@ class OdontogramaView extends StatefulWidget {
 
 class _OdontogramaViewState extends State<OdontogramaView> {
   bool get _canAdd => widget.canEdit && widget.atendimentoId != null;
-  bool get _canManageExisting => widget.canManageExisting || _canAdd;
+  bool get _canManageExisting =>
+      widget.atendimentoId != null && (widget.canManageExisting || _canAdd);
 
   @override
   void initState() {
@@ -77,7 +78,7 @@ class _OdontogramaViewState extends State<OdontogramaView> {
     if (!mounted) return;
     _snack(
       error ??
-          (registro == null ? 'Defeito registrado.' : 'Defeito atualizado.'),
+          (registro == null ? 'Condi\u00e7\u00e3o registrada.' : 'Condi\u00e7\u00e3o atualizada.'),
     );
   }
 
@@ -86,7 +87,7 @@ class _OdontogramaViewState extends State<OdontogramaView> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Excluir defeito?'),
+        title: const Text('Excluir condi\u00e7\u00e3o?'),
         content: Text(
           '${model.condicaoNome(registro.condicaoId)} · face ${registro.face.label.toLowerCase()} do dente ${registro.numeroDente}.',
         ),
@@ -105,7 +106,7 @@ class _OdontogramaViewState extends State<OdontogramaView> {
     if (confirmed != true || !mounted) return;
     final error = await model.remove(registro);
     if (!mounted) return;
-    _snack(error ?? 'Defeito excluído.');
+    _snack(error ?? 'Condi\u00e7\u00e3o exclu\u00edda.');
   }
 
   @override
@@ -229,6 +230,10 @@ class _OdontogramaViewState extends State<OdontogramaView> {
                           GraficoOdontograma(
                             registrosPorDente: model.registrosPorDente,
                             selectedTooth: model.selectedTooth,
+                            conditionCodes: {
+                              for (final condicao in model.condicoes)
+                                condicao.id: condicao.codigo,
+                            },
                             onToothTap: model.selectTooth,
                           ),
                           const SizedBox(height: 12),
@@ -337,10 +342,10 @@ class _Header extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final accent = EstiloPaginaAluno.accent(context);
     final instruction = canAdd
-        ? 'Selecione um dente para consultar ou registrar defeitos.'
+        ? 'Selecione um dente para consultar ou registrar condi\u00e7\u00f5es.'
         : canManageExisting
-            ? 'Selecione um dente para consultar, editar ou excluir defeitos.'
-            : 'Selecione um dente para consultar os defeitos registrados.';
+            ? 'Selecione um dente para consultar, editar ou excluir condi\u00e7\u00f5es.'
+            : 'Selecione um dente para consultar as condi\u00e7\u00f5es registradas.';
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
@@ -375,7 +380,12 @@ class _Legend extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _Dot(color: GraficoOdontograma.colorForCondicao(id)),
+              _Dot(
+                color: GraficoOdontograma.colorForCondicao(
+                  id,
+                  codigo: model.condicaoCodigo(id),
+                ),
+              ),
               const SizedBox(width: 6),
               Text(model.condicaoNome(id)),
             ],
@@ -423,7 +433,7 @@ class _ToothPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final tooth = model.selectedTooth;
     final registros = model.selectedToothRegistros;
-    final withDefects = model.registrosPorDente.keys.toList()..sort();
+    final teethWithConditions = model.registrosPorDente.keys.toList()..sort();
     final textTheme = Theme.of(context).textTheme;
 
     return Card(
@@ -432,7 +442,7 @@ class _ToothPanel extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Defeitos do dente', style: textTheme.titleMedium),
+            Text('Condi\u00e7\u00f5es do dente', style: textTheme.titleMedium),
             const SizedBox(height: 10),
             DropdownButtonFormField<int>(
               key: ValueKey<int?>(tooth),
@@ -453,18 +463,20 @@ class _ToothPanel extends StatelessWidget {
             const SizedBox(height: 14),
             if (tooth == null)
               const Text(
-                'Toque em um dente do odontograma (ou escolha na lista acima) para ver os defeitos registrados.',
+                'Toque em um dente do odontograma (ou escolha na lista acima) para consultar as condi\u00e7\u00f5es registradas.',
               )
             else ...[
               Text(MapaDentes.describe(tooth), style: textTheme.titleSmall),
               const SizedBox(height: 6),
               if (registros.isEmpty)
-                const Text('Nenhum defeito registrado neste dente.')
+                const Text('Nenhuma condi\u00e7\u00e3o registrada neste dente.')
               else
                 for (final registro in registros)
                   _RegistroTile(
                     registro: registro,
                     condicaoNome: model.condicaoNome(registro.condicaoId),
+                    condicaoCodigo:
+                        model.condicaoCodigo(registro.condicaoId),
                     canModify: canManageExisting &&
                         (currentUserId == null ||
                             registro.registradoPor == currentUserId) &&
@@ -479,14 +491,14 @@ class _ToothPanel extends StatelessWidget {
                   key: const Key('odontograma-add'),
                   onPressed: model.isSaving ? null : onAdd,
                   icon: const Icon(Icons.add),
-                  label: const Text('Adicionar defeito'),
+                  label: const Text('Adicionar condi\u00e7\u00e3o'),
                 ),
               ],
             ],
-            if (withDefects.isNotEmpty) ...[
+            if (teethWithConditions.isNotEmpty) ...[
               const Divider(height: 28),
               Text(
-                'Dentes com defeitos registrados',
+                'Dentes com condi\u00e7\u00f5es registradas',
                 style: textTheme.titleSmall,
               ),
               const SizedBox(height: 8),
@@ -494,7 +506,7 @@ class _ToothPanel extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 4,
                 children: [
-                  for (final number in withDefects)
+                  for (final number in teethWithConditions)
                     ActionChip(
                       label: Text(
                         '$number (${model.registrosPorDente[number]!.length})',
@@ -515,6 +527,7 @@ class _RegistroTile extends StatelessWidget {
   const _RegistroTile({
     required this.registro,
     required this.condicaoNome,
+    required this.condicaoCodigo,
     required this.canModify,
     required this.busy,
     required this.onEdit,
@@ -523,6 +536,7 @@ class _RegistroTile extends StatelessWidget {
 
   final OdontogramaRegistroModel registro;
   final String condicaoNome;
+  final String? condicaoCodigo;
   final bool canModify;
   final bool busy;
   final VoidCallback onEdit;
@@ -541,7 +555,10 @@ class _RegistroTile extends StatelessWidget {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: _Dot(
-        color: GraficoOdontograma.colorForCondicao(registro.condicaoId),
+        color: GraficoOdontograma.colorForCondicao(
+          registro.condicaoId,
+          codigo: condicaoCodigo,
+        ),
       ),
       title: Text(
         condicaoNome,
@@ -595,12 +612,58 @@ class _RegistroDialog extends StatefulWidget {
 }
 
 class _RegistroDialogState extends State<_RegistroDialog> {
+  static const _wholeToothConditionCodes = <String>{
+    'EXTRACAO_INDICADA',
+    'PROTESE',
+    'AUSENTE',
+    'NAO_ERUPCIONADO',
+    'IMPLANTE',
+    'RAIZ_RESIDUAL',
+    'COROA',
+  };
+
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _observacao = TextEditingController(
     text: widget.registro?.observacao ?? '',
   );
   late int? _condicaoId = widget.registro?.condicaoId;
   late FaceDente? _face = widget.registro?.face;
+
+  List<FaceDente> get _faceOptions {
+    final options = MapaDentes.facesForTooth(widget.tooth);
+    if (_face != null && !options.contains(_face)) options.add(_face!);
+    return options;
+  }
+
+  bool _isWholeToothCondition(int? id) {
+    if (id == null) return false;
+    return widget.condicoes.any(
+      (condition) =>
+          condition.id == id &&
+          _wholeToothConditionCodes.contains(condition.codigo.toUpperCase()),
+    );
+  }
+
+  void _onConditionChanged(int? id) {
+    setState(() {
+      _condicaoId = id;
+      if (_isWholeToothCondition(id)) {
+        _face = FaceDente.denteInteiro;
+      } else if (_face == FaceDente.denteInteiro) {
+        _face = widget.tooth % 10 <= 3
+            ? FaceDente.incisal
+            : FaceDente.oclusal;
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (_face == null && _isWholeToothCondition(_condicaoId)) {
+      _face = FaceDente.denteInteiro;
+    }
+  }
 
   @override
   void dispose() {
@@ -624,8 +687,8 @@ class _RegistroDialogState extends State<_RegistroDialog> {
   Widget build(BuildContext context) => AlertDialog(
     title: Text(
       widget.registro == null
-          ? 'Novo defeito · dente ${widget.tooth}'
-          : 'Editar defeito · dente ${widget.tooth}',
+          ? 'Nova condi\u00e7\u00e3o · dente ${widget.tooth}'
+          : 'Editar condi\u00e7\u00e3o · dente ${widget.tooth}',
     ),
     content: SizedBox(
       width: 420,
@@ -639,7 +702,7 @@ class _RegistroDialogState extends State<_RegistroDialog> {
                 initialValue: _condicaoId,
                 isExpanded: true,
                 decoration: const InputDecoration(
-                  labelText: 'Defeito / condição',
+                  labelText: 'Condi\u00e7\u00e3o odontol\u00f3gica',
                 ),
                 items: [
                   for (final condicao in widget.condicoes)
@@ -648,17 +711,27 @@ class _RegistroDialogState extends State<_RegistroDialog> {
                       child: Text(condicao.nome),
                     ),
                 ],
-                onChanged: (value) => setState(() => _condicaoId = value),
+                onChanged: _onConditionChanged,
                 validator: (value) =>
-                    value == null ? 'Selecione o defeito.' : null,
+                    value == null ? 'Selecione a condi\u00e7\u00e3o.' : null,
               ),
+              if (_isWholeToothCondition(_condicaoId)) ...[
+                const SizedBox(height: 8),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Essa condi\u00e7\u00e3o ser\u00e1 registrada no dente inteiro. Voc\u00ea pode escolher uma face espec\u00edfica se necess\u00e1rio.',
+                  ),
+                ),
+              ],
               const SizedBox(height: 14),
               DropdownButtonFormField<FaceDente>(
+                key: ValueKey<FaceDente?>(_face),
                 initialValue: _face,
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Face do dente'),
                 items: [
-                  for (final face in FaceDente.values)
+                  for (final face in _faceOptions)
                     DropdownMenuItem(value: face, child: Text(face.label)),
                 ],
                 onChanged: (value) => setState(() => _face = value),

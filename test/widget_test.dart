@@ -67,7 +67,59 @@ void main() {
 
   testWidgets('routes a professor to the professor area', (tester) async {
     await _loginAs(tester, 'PROFESSOR');
-    expect(find.text('Área do professor'), findsOneWidget);
+    expect(find.textContaining('Acompanhe as atividades'), findsOneWidget);
+  });
+
+  testWidgets('professor sidebar can collapse and expand repeatedly', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1910, 935);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await _loginAs(tester, 'PROFESSOR');
+
+    Future<void> toggle(String tooltip) async {
+      await tester.tap(find.byTooltip(tooltip));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    }
+
+    expect(find.text('Pendências de aprovação'), findsOneWidget);
+    expect(find.byTooltip('Recolher menu'), findsOneWidget);
+    expect(find.text('Configurações'), findsOneWidget);
+
+    await toggle('Recolher menu');
+    expect(find.text('Pendências de aprovação'), findsOneWidget);
+    expect(find.byTooltip('Expandir menu'), findsOneWidget);
+    expect(find.text('Configurações'), findsNothing);
+
+    await toggle('Expandir menu');
+    expect(find.text('Pendências de aprovação'), findsOneWidget);
+    expect(find.byTooltip('Recolher menu'), findsOneWidget);
+    expect(find.text('Configurações'), findsOneWidget);
+
+    for (var i = 0; i < 3; i++) {
+      await toggle('Recolher menu');
+      expect(find.text('Pendências de aprovação'), findsOneWidget);
+      await toggle('Expandir menu');
+      expect(find.text('Pendências de aprovação'), findsOneWidget);
+    }
+
+    await tester.tap(find.text('Pacientes'));
+    await tester.pumpAndSettle();
+    expect(find.text('Resultados da busca'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Pendências de aprovação'), findsOneWidget);
+
+    await toggle('Recolher menu');
+    await tester.tap(find.byTooltip('Pacientes'));
+    await tester.pumpAndSettle();
+    expect(find.text('Resultados da busca'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Pendências de aprovação'), findsOneWidget);
   });
 
   testWidgets('routes an aluno to the student area', (tester) async {

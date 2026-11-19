@@ -271,27 +271,13 @@ class _MeusAtendimentosViewState extends State<MeusAtendimentosView> {
     final fichaId = item.atendimento.fichaId;
     final status = item.status;
     if (fichaId == null || status != StatusFicha.rascunho) return;
-    if (!await _confirmDelete('O rascunho será removido permanentemente.')) return;
+    if (!await _confirmDelete('Se for a única ficha, o atendimento e os registros vinculados também serão removidos permanentemente.')) return;
     final deleted = await context
         .read<SemiologiaViewModel>()
         .deleteDraft(fichaId: fichaId, status: status!);
     if (!mounted) return;
     if (deleted) {
-      final error = await context
-          .read<AtendimentoViewModel>()
-          .deleteAttendance(item.atendimento.id);
-      if (!mounted) return;
-      if (error != null) {
-        await context.read<AtendimentoViewModel>().loadMyAttendances();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Rascunho removido, mas nao foi possivel remover o atendimento associado. $error',
-            ),
-          ),
-        );
-      }
+      await context.read<AtendimentoViewModel>().loadMyAttendances();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

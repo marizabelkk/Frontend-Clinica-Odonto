@@ -110,7 +110,7 @@ class AtendimentoRepository {
         return 'O prontuário, atendimento ou especialidade não foi encontrado.';
       }
       if (code == 409) {
-        return 'Este atendimento possui uma ficha vinculada e não pode ser excluído. Exclua primeiro o rascunho, se permitido.';
+        return 'Este atendimento ainda possui uma ficha ou outro registro cl\u00ednico vinculado e n\u00e3o pode ser exclu\u00eddo.';
       }
       if (code == 422) {
         return 'A API rejeitou os dados enviados. Revise os campos.';

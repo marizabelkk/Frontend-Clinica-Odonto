@@ -50,6 +50,13 @@ class OdontogramaViewModel extends ChangeNotifier {
     return 'Condição #$condicaoId';
   }
 
+  String? condicaoCodigo(int condicaoId) {
+    for (final condicao in _condicoes) {
+      if (condicao.id == condicaoId) return condicao.codigo;
+    }
+    return null;
+  }
+
   void selectTooth(int? tooth) {
     _selectedTooth = tooth;
     notifyListeners();

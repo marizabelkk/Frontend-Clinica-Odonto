@@ -91,6 +91,8 @@ class _ProntuarioViewState extends State<ProntuarioView> {
                 return _RecordContent(
                   prontuario: prontuario,
                   canStartAttendance: isStudent,
+                  canReviewFichas: perfil == PerfilUsuario.professor ||
+                      perfil == PerfilUsuario.admin,
                   currentUserId: usuario?.id,
                   canViewOdontograma: perfil == PerfilUsuario.aluno || perfil == PerfilUsuario.professor || perfil == PerfilUsuario.admin,
                   foreground: foreground,
@@ -126,6 +128,7 @@ class _RecordContent extends StatefulWidget {
   const _RecordContent({
     required this.prontuario,
     required this.canStartAttendance,
+    required this.canReviewFichas,
     required this.currentUserId,
     required this.canViewOdontograma,
     required this.foreground,
@@ -135,6 +138,7 @@ class _RecordContent extends StatefulWidget {
 
   final ProntuarioModel prontuario;
   final bool canStartAttendance;
+  final bool canReviewFichas;
   final int? currentUserId;
   final bool canViewOdontograma;
   final Color foreground;
@@ -152,15 +156,33 @@ class _RecordContentState extends State<_RecordContent> {
   PacienteModel get paciente => widget.prontuario.paciente;
 
   StatusFicha? _statusOf(Map<String, dynamic> item) {
-    final raw = item['status']?.toString();
+    final ficha = item['ficha'];
+    final nestedFicha = ficha is Map ? Map<String, dynamic>.from(ficha) : null;
+    final raw = (item['status'] ??
+            item['status_ficha'] ??
+            item['situacao'] ??
+            nestedFicha?['status'])
+        ?.toString()
+        .toUpperCase();
     for (final status in StatusFicha.values) {
       if (status.apiValue == raw) return status;
     }
     return null;
   }
 
-  int? _intField(Map<String, dynamic> item, String key) =>
-      item[key] is int ? item[key] as int : null;
+  int? _intField(Map<String, dynamic> item, String key) {
+    final value = item[key];
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    if (value is num) return value.toInt();
+    if (key == 'ficha_id' && item['ficha'] is Map) {
+      final nestedId = (item['ficha'] as Map)['id'];
+      if (nestedId is int) return nestedId;
+      if (nestedId is String) return int.tryParse(nestedId);
+      if (nestedId is num) return nestedId.toInt();
+    }
+    return null;
+  }
 
   Future<void> _openFicha(Map<String, dynamic> item, {required bool edit}) async {
     final fichaId = _intField(item, 'ficha_id');
@@ -230,7 +252,7 @@ class _RecordContentState extends State<_RecordContent> {
     final fichaId = _intField(item, 'ficha_id');
     final attendanceId = _intField(item, 'id');
     if (status == StatusFicha.rascunho && fichaId != null) {
-      if (!await _confirmDelete('O rascunho será removido permanentemente.')) return;
+      if (!await _confirmDelete('Se for a única ficha, o atendimento e os registros vinculados também serão removidos permanentemente.')) return;
       final deleted = await context
           .read<SemiologiaViewModel>()
           .deleteDraft(fichaId: fichaId, status: status!);
@@ -242,28 +264,7 @@ class _RecordContentState extends State<_RecordContent> {
         );
         return;
       }
-      // After deleting the draft, also delete its attendance to prevent a stale row.
-      if (attendanceId != null) {
-        final error = await context
-            .read<AtendimentoViewModel>()
-            .deleteAttendance(attendanceId);
-        if (!mounted) return;
-        if (error != null) {
-          await context
-              .read<PacienteViewModel>()
-              .loadProntuario(widget.prontuario.pacienteId);
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Rascunho removido, mas nao foi possivel remover o atendimento associado. $error',
-              ),
-            ),
-          );
-          return;
-        }
-      }
-    } else if (status == null && attendanceId != null) {
+    } else if (fichaId == null && attendanceId != null) {
       if (!await _confirmDelete('O atendimento será removido permanentemente.')) return;
       final error = await context
           .read<AtendimentoViewModel>()
@@ -285,7 +286,13 @@ class _RecordContentState extends State<_RecordContent> {
         foreground: widget.foreground,
         muted: widget.muted,
         canManage: widget.canStartAttendance,
-        onView: item['ficha_id'] is int ? () => _openFicha(item, edit: false) : null,
+        canView: widget.canReviewFichas ||
+            _statusOf(item) == StatusFicha.aprovada ||
+            (widget.currentUserId != null &&
+                _intField(item, 'aluno_id') == widget.currentUserId),
+        onView: _intField(item, 'ficha_id') != null
+            ? () => _openFicha(item, edit: false)
+            : null,
         onEdit: () => _openFicha(item, edit: true),
         onDelete: () => _deleteEntry(item),
       );
@@ -488,8 +495,6 @@ class _RecordContentState extends State<_RecordContent> {
             ? () => Navigator.of(context).push<void>(MaterialPageRoute<void>(builder: (_) => OdontogramaView(
                 prontuarioId: paciente.prontuarioId!,
                 pacienteNome: paciente.nomeCompleto,
-                canManageExisting: widget.canStartAttendance,
-                currentUserId: widget.currentUserId,
                 showStudentNavigation: widget.canStartAttendance,
               )))
             : null,
@@ -639,12 +644,13 @@ class _SectionCard extends StatelessWidget {
 }
 
 class _AttendanceRow extends StatelessWidget {
-  const _AttendanceRow({required this.item, required this.dark, required this.foreground, required this.muted, required this.canManage, this.onView, required this.onEdit, required this.onDelete});
+  const _AttendanceRow({required this.item, required this.dark, required this.foreground, required this.muted, required this.canManage, required this.canView, this.onView, required this.onEdit, required this.onDelete});
   final Map<String, dynamic> item;
   final bool dark;
   final Color foreground;
   final Color muted;
   final bool canManage;
+  final bool canView;
   final VoidCallback? onView;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -653,14 +659,17 @@ class _AttendanceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = _firstValue(item, ['especialidade_nome', 'especialidade', 'tipo', 'titulo', 'nome']) ?? 'Atendimento';
     final detail = _firstValue(item, ['descricao', 'queixa_principal', 'procedimento', 'observacao']) ?? 'Avaliação clínica';
-    final date = _firstValue(item, ['data_atendimento', 'criado_em', 'data', 'created_at']) ?? 'Data não informada';
-    final statusRaw = _firstValue(item, ['status', 'situacao']) ?? 'Registrado';
-    final status = _statusLabel(statusRaw);
-    final color = _statusColor(statusRaw);
-    final normalizedStatus = statusRaw.toUpperCase();
+    final date = _firstValue(item, ['data_atendimento', 'iniciado_em', 'criado_em', 'data', 'created_at']) ?? 'Data não informada';
+    final nestedFicha = item['ficha'];
+    final statusRaw = _firstValue(item, ['status', 'status_ficha', 'situacao']) ??
+        (nestedFicha is Map ? nestedFicha['status']?.toString() : null);
+    final status = statusRaw == null ? null : _statusLabel(statusRaw);
+    final color = statusRaw == null ? null : _statusColor(statusRaw);
+    final normalizedStatus = statusRaw?.toUpperCase() ?? '';
     final isDraft = normalizedStatus.contains('RASCUN');
     final isCorrection = normalizedStatus.contains('CORRE');
-    final hasFicha = item['ficha_id'] is int;
+    final hasFicha = item['ficha_id'] != null ||
+        (nestedFicha is Map && nestedFicha['id'] != null);
     final canEdit = hasFicha && (isDraft || isCorrection);
     final correctionNote = item['observacao_correcao']?.toString();
     final student = item['aluno_responsavel'];
@@ -692,36 +701,37 @@ class _AttendanceRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 128),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: dark ? .18 : .12),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    _statusLabel(statusRaw),
-                    maxLines: 2,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-              if (canManage) ...[
-                if (hasFicha)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: IconButton(
-                      tooltip: 'Visualizar ficha',
-                      onPressed: onView,
-                      icon: Icon(Icons.visibility_outlined, color: dark ? AppTheme.gold : AppTheme.navy, size: 19),
-                      constraints: const BoxConstraints.tightFor(width: 38, height: 36),
-                      padding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
+              if (status != null && color != null)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 128),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: dark ? .18 : .12),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      status,
+                      maxLines: 2,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700),
                     ),
                   ),
+                ),
+              if (canView && hasFicha)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    tooltip: 'Visualizar ficha',
+                    onPressed: onView,
+                    icon: Icon(Icons.visibility_outlined, color: dark ? AppTheme.gold : AppTheme.navy, size: 19),
+                    constraints: const BoxConstraints.tightFor(width: 38, height: 36),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              if (canManage) ...[
                 if (canEdit)
                   Align(
                     alignment: Alignment.centerRight,
