@@ -77,6 +77,7 @@ class _StudentHomeView extends StatefulWidget {
 }
 
 class _StudentHomeViewState extends State<_StudentHomeView> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   int _tab = 0;
   int _status = 0;
 
@@ -148,12 +149,14 @@ class _StudentHomeViewState extends State<_StudentHomeView> {
     final compact = width < 600;
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: page,
+      drawer: _studentDrawer(dark, foreground, muted, line),
       body: SafeArea(bottom: false, child: Column(children: [
         Expanded(child: CustomScrollView(slivers: [
           SliverToBoxAdapter(child: _StudentHeader(
             usuario: widget.usuario, compact: compact, dark: dark,
-            onMenu: () => _showMenu(context),
+            onMenu: () => _scaffoldKey.currentState?.openDrawer(),
           )),
           SliverPadding(
             padding: EdgeInsets.fromLTRB(compact ? 14 : 28, 12, compact ? 14 : 28, 16),
@@ -192,6 +195,98 @@ class _StudentHomeViewState extends State<_StudentHomeView> {
           }
         }),
       ])),
+    );
+  }
+
+  Widget _studentDrawer(bool dark, Color foreground, Color muted, Color line) {
+    final surface = dark ? const Color(0xFF0D1B2E) : Colors.white;
+    return Drawer(
+      backgroundColor: surface,
+      child: SafeArea(
+        child: Column(
+          children: [
+            SizedBox(
+              height: 150,
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset('assets/images/brand_background.png', fit: BoxFit.cover),
+                  ColoredBox(
+                    color: const Color(0xFF05285A).withValues(alpha: .68),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ol\u00e1, ${widget.usuario.nome.split(' ').first}!',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          const Text(
+                            'Aluna de Odontologia',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.home_outlined, color: dark ? AppTheme.gold : AppTheme.navy),
+              title: Text('In\u00edcio', style: TextStyle(color: foreground)),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() => _tab = 0);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.people_outline, color: dark ? AppTheme.gold : AppTheme.navy),
+              title: Text('Pacientes', style: TextStyle(color: foreground)),
+              onTap: () {
+                Navigator.pop(context);
+                _openPatients();
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.assignment_outlined, color: dark ? AppTheme.gold : AppTheme.navy),
+              title: Text('Atendimentos', style: TextStyle(color: foreground)),
+              onTap: () {
+                Navigator.pop(context);
+                _openAttendances();
+              },
+            ),
+            Divider(color: line),
+            ListTile(
+              leading: Icon(Icons.brightness_6_outlined, color: muted),
+              title: Text('Tema', style: TextStyle(color: foreground)),
+              trailing: const BotaoAlternarTema(),
+            ),
+            const Spacer(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Color(0xFFD92332)),
+              title: Text('Sair', style: TextStyle(color: foreground)),
+              onTap: () {
+                Navigator.pop(context);
+                _logout(context);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -285,11 +380,6 @@ class _StudentHomeViewState extends State<_StudentHomeView> {
     ]),
   ));
 
-  void _showMenu(BuildContext context) => showModalBottomSheet<void>(context: context, builder: (context) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
-    ListTile(leading: const Icon(Icons.people_outline), title: const Text('Pacientes'), onTap: () { Navigator.pop(context); _openPatients(); }),
-    ListTile(leading: const Icon(Icons.logout), title: const Text('Sair'), onTap: () { Navigator.pop(context); _logout(context); }),
-  ])));
-
   void _showProfile(BuildContext context, Color fg, Color muted, bool dark) => showModalBottomSheet<void>(context: context, builder: (context) => SafeArea(child: Padding(
     padding: const EdgeInsets.all(24),
     child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -318,9 +408,8 @@ class _StudentHeader extends StatelessWidget {
       DecoratedBox(decoration: BoxDecoration(color: const Color(0xFF05285A).withValues(alpha: dark ? .72 : .66))),
       Positioned(top: 3, left: 2, child: IconButton(onPressed: onMenu, color: Colors.white, icon: const Icon(Icons.menu_rounded))),
       const Positioned(top: 3, right: 5, child: BotaoAlternarTema(color: Colors.white)),
-      Positioned(left: compact ? 16 : 34, right: 16, bottom: compact ? 14 : 22, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Positioned(left: compact ? 16 : 34, right: 16, top: 68, bottom: compact ? 14 : 22, child: Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Olá, ${usuario.nome.split(' ').first}!', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white, fontSize: compact ? 25 : 38, fontWeight: FontWeight.w800, letterSpacing: -.5)),
-        const SizedBox(height: 2),
         Text('Aluna de Odontologia', style: TextStyle(color: Colors.white.withValues(alpha: .95), fontSize: compact ? 14 : 20)),
         Text('Turma: ${usuario.matricula?.isNotEmpty == true ? usuario.matricula : 'OD2026A'}', style: TextStyle(color: Colors.white.withValues(alpha: .95), fontSize: compact ? 13 : 19)),
       ])),

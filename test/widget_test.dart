@@ -122,6 +122,35 @@ void main() {
     expect(find.text('Pendências de aprovação'), findsOneWidget);
   });
 
+  testWidgets('professor pending links open the pending list view', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1910, 935);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await _loginAs(tester, 'PROFESSOR');
+
+    Future<void> expectPendingPage() async {
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Visualize todas as fichas'), findsOneWidget);
+    }
+
+    await tester.tap(find.text('Ver todas').first);
+    await expectPendingPage();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Ver pendências'));
+    await tester.tap(find.text('Ver pendências'));
+    await expectPendingPage();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(ListTile, 'Pendências').first);
+    await expectPendingPage();
+  });
+
   testWidgets('routes an aluno to the student area', (tester) async {
     await _loginAs(tester, 'ALUNO');
     expect(find.text('Área do aluno'), findsOneWidget);

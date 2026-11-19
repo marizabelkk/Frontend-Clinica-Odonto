@@ -17,6 +17,12 @@ import '../../atendimentos/meus_atendimentos_view.dart';
 import '../../../widgets/navegacao_inferior_aluno.dart';
 import '../../../widgets/cabecalho_pagina_aluno.dart';
 
+
+Color _heading(bool dark) => dark ? AppTheme.darkText : AppTheme.navy;
+Color _link(bool dark) => dark ? const Color(0xFF9DBBFF) : const Color(0xFF1D4ED8);
+Color _softFill(bool dark) => dark ? const Color(0xFF16304F) : const Color(0xFFE4ECFB);
+Color _softBox(bool dark) => dark ? const Color(0xFF12233A) : const Color(0xFFEEF3FC);
+
 class ProntuarioView extends StatefulWidget {
   const ProntuarioView({required this.pacienteId, super.key});
 
@@ -49,9 +55,8 @@ class _ProntuarioViewState extends State<ProntuarioView> {
       body: Theme(
         data: EstiloPaginaAluno.readableTheme(context),
         child: Column(children: [
-          CabecalhoPaginaAluno(
+          _CabecalhoProntuario(
             title: 'Prontuário do Paciente',
-            subtitle: 'Informações clínicas e histórico de atendimentos',
             actions: [
               PopupMenuButton<String>(
                 tooltip: 'Mais opções',
@@ -122,6 +127,51 @@ class _ProntuarioViewState extends State<ProntuarioView> {
           : null,
     );
   }
+}
+
+
+class _CabecalhoProntuario extends StatelessWidget {
+  const _CabecalhoProntuario({required this.title, required this.actions});
+  final String title;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        color: AppTheme.navy,
+        child: SafeArea(
+          bottom: false,
+          child: SizedBox(
+            height: 62,
+            child: Row(children: [
+              SizedBox(
+                width: 104,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: const Icon(Icons.chevron_left, size: 30),
+                    label: const Text('Voltar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    style: TextButton.styleFrom(foregroundColor: Colors.white, padding: const EdgeInsets.only(left: 6, right: 8)),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w800),
+                ),
+              ),
+              SizedBox(
+                width: 104,
+                child: Align(alignment: Alignment.centerRight, child: Row(mainAxisSize: MainAxisSize.min, children: actions)),
+              ),
+            ]),
+          ),
+        ),
+      );
 }
 
 class _RecordContent extends StatefulWidget {
@@ -280,11 +330,12 @@ class _RecordContentState extends State<_RecordContent> {
     await context.read<PacienteViewModel>().loadProntuario(widget.prontuario.pacienteId);
   }
 
-  Widget _attendanceRow(Map<String, dynamic> item) => _AttendanceRow(
+  Widget _attendanceRow(Map<String, dynamic> item, {bool highlight = false}) => _AttendanceRow(
         item: item,
         dark: widget.dark,
         foreground: widget.foreground,
         muted: widget.muted,
+        highlight: highlight,
         canManage: widget.canStartAttendance,
         canView: widget.canReviewFichas ||
             _statusOf(item) == StatusFicha.aprovada ||
@@ -297,29 +348,69 @@ class _RecordContentState extends State<_RecordContent> {
         onDelete: () => _deleteEntry(item),
       );
 
+  Widget _rowsBox(List<Widget> rows) {
+    final line = widget.dark ? const Color(0xFF263A56) : const Color(0xFFE3E9F3);
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: widget.dark ? const Color(0xFF0D1B2E) : Colors.white,
+        border: Border.all(color: line),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(children: [
+        for (var i = 0; i < rows.length; i++) ...[
+          rows[i],
+          if (i < rows.length - 1) Divider(height: 1, color: line),
+        ],
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final line = widget.dark ? const Color(0xFF263A56) : const Color(0xFFE3E9F3);
     final surface = widget.dark ? AppTheme.darkSurface : Colors.white;
     return Column(children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
-        child: _PatientProfileCard(
-          paciente: paciente,
-          prontuarioId: widget.prontuario.id,
-          expanded: _showMore,
-          onToggle: () => setState(() => _showMore = !_showMore),
-          foreground: widget.foreground,
-          muted: widget.muted,
-          dark: widget.dark,
+      Stack(children: [
+        Positioned(top: 0, left: 0, right: 0, height: 44, child: ColoredBox(color: AppTheme.navy)),
+        Positioned(
+          top: 5,
+          left: 14,
+          right: 14,
+          height: 44,
+          child: Align(
+            alignment: Alignment.topRight,
+            child: FractionallySizedBox(
+              widthFactor: .5,
+              child: Container(
+                height: 44,
+                decoration: const BoxDecoration(color: AppTheme.gold, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+              ),
+            ),
+          ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+          child: _PatientProfileCard(
+            paciente: paciente,
+            prontuarioId: widget.prontuario.id,
+            expanded: _showMore,
+            onToggle: () => setState(() => _showMore = !_showMore),
+            foreground: widget.foreground,
+            muted: widget.muted,
+            dark: widget.dark,
+          ),
+        ),
+      ]),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
+        child: _RecordTabs(selected: _tab, dark: widget.dark, onSelected: (index) => setState(() => _tab = index)),
       ),
-      _RecordTabs(selected: _tab, dark: widget.dark, onSelected: (index) => setState(() => _tab = index)),
       Expanded(
         child: Container(
           color: EstiloPaginaAluno.background(context),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 16),
             child: Center(child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1100),
               child: switch (_tab) {
@@ -343,9 +434,35 @@ class _RecordContentState extends State<_RecordContent> {
       _SectionCard(
         surface: surface,
         line: line,
-        title: 'Resumo clínico',
-        trailing: TextButton(onPressed: () => setState(() => _tab = 1), child: const Text('Ver tudo')),
-        child: _clinicalSummary(),
+        title: 'Resumo Clínico',
+        trailing: _PillButton(
+          dark: widget.dark,
+          label: 'Atualizar informações',
+          onPressed: () => context.read<PacienteViewModel>().loadProntuario(widget.prontuario.pacienteId),
+        ),
+        child: Column(children: [
+          _clinicalSummary(),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
+            decoration: BoxDecoration(color: _softBox(widget.dark), borderRadius: BorderRadius.circular(12)),
+            child: Row(children: [
+              Icon(Icons.info_outline, color: _link(widget.dark), size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'As informações acima foram coletadas na avaliação inicial de Semiologia e podem ser atualizadas a cada atendimento.',
+                  style: TextStyle(color: widget.foreground, fontSize: 12.5, height: 1.35),
+                ),
+              ),
+              TextButton(
+                onPressed: () => setState(() => _tab = 1),
+                style: TextButton.styleFrom(foregroundColor: _link(widget.dark), padding: const EdgeInsets.symmetric(horizontal: 8)),
+                child: const Text('Ver tudo', style: TextStyle(fontWeight: FontWeight.w800)),
+              ),
+            ]),
+          ),
+        ]),
       ),
       const SizedBox(height: 10),
       _SectionCard(
@@ -364,12 +481,17 @@ class _RecordContentState extends State<_RecordContent> {
         child: Column(children: [
           _recentAttendance(context),
           if (widget.canStartAttendance) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             SizedBox(width: double.infinity, child: OutlinedButton.icon(
               onPressed: _startAttendance,
-              icon: const Icon(Icons.add, size: 22),
-              label: const Text('Novo atendimento', style: TextStyle(fontWeight: FontWeight.w700)),
-              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48), side: BorderSide(color: widget.dark ? AppTheme.gold : AppTheme.navy, width: 1.4)),
+              icon: const Icon(Icons.add, size: 24),
+              label: const Text('Novo atendimento', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: widget.dark ? AppTheme.gold : AppTheme.navy,
+                minimumSize: const Size.fromHeight(52),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                side: BorderSide(color: widget.dark ? AppTheme.gold : AppTheme.navy, width: 1.4),
+              ),
             )),
           ],
         ]),
@@ -377,51 +499,58 @@ class _RecordContentState extends State<_RecordContent> {
       const SizedBox(height: 10),
       Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: widget.dark ? const Color(0xFF12233A) : const Color(0xFFEEF3FC), borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(color: _softBox(widget.dark), border: Border.all(color: line), borderRadius: BorderRadius.circular(14)),
         child: Row(children: [
-          Icon(Icons.lock_outline, color: widget.dark ? AppTheme.gold : AppTheme.navy, size: 24),
-          const SizedBox(width: 10),
-          Expanded(child: Text('Este prontuário contém informações confidenciais. Acesso restrito a alunos e professores autorizados.', style: TextStyle(color: widget.foreground, fontSize: 13))),
+          Icon(Icons.lock_outline, color: widget.dark ? AppTheme.gold : AppTheme.navy, size: 26),
+          const SizedBox(width: 12),
+          Expanded(child: Text('Este prontuário contém informações confidenciais. Acesso restrito a alunos e professores autorizados.', style: TextStyle(color: widget.foreground, fontSize: 13, height: 1.35))),
         ]),
       ),
     ],
   );
 
   Widget _clinicalSummary() {
+    final line = widget.dark ? const Color(0xFF263A56) : const Color(0xFFE4EAF4);
     final categories = [
-      ('Condições médicas', widget.prontuario.condicoesMedicas, const Color(0xFF174A9A)),
+      ('Condições médicas', widget.prontuario.condicoesMedicas, widget.dark ? const Color(0xFF7FA8FF) : const Color(0xFF174A9A)),
       ('Alergias', widget.prontuario.alergias, const Color(0xFFD62935)),
       ('Medicamentos em uso', widget.prontuario.medicamentos, const Color(0xFF159457)),
     ];
-    return LayoutBuilder(builder: (context, constraints) {
-      final columns = constraints.maxWidth > 750 ? 3 : 2;
-      return GridView.count(
-        crossAxisCount: columns,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        childAspectRatio: columns == 2 ? 1.15 : 1.65,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        children: categories.map((category) => Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: widget.dark ? const Color(0xFF0D1A2C) : const Color(0xFFFAFBFE), border: Border.all(color: widget.dark ? const Color(0xFF263A56) : const Color(0xFFE4EAF4)), borderRadius: BorderRadius.circular(12)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(category.$1, style: TextStyle(color: category.$3, fontSize: 13, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 5),
-            Expanded(child: category.$2.isEmpty
-                ? Text('Nenhuma informação cadastrada', style: TextStyle(color: widget.muted, fontSize: 12))
-                : ListView(shrinkWrap: true, children: category.$2.take(2).map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 3),
-                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Icon(Icons.circle, color: category.$3, size: 7),
-                      const SizedBox(width: 6),
-                      Expanded(child: Text(_itemLabel(item), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: widget.foreground, fontSize: 12))),
-                    ]),
-                  )).toList())),
-          ]),
-        )).toList(),
-      );
-    });
+    return Container(
+      decoration: BoxDecoration(
+        color: widget.dark ? const Color(0xFF0D1A2C) : const Color(0xFFFAFBFE),
+        border: Border.all(color: line),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: IntrinsicHeight(
+        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          for (var i = 0; i < categories.length; i++) ...[
+            if (i > 0) Container(width: 1, color: line),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(categories[i].$1, style: TextStyle(color: categories[i].$3, fontSize: 13, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  if (categories[i].$2.isEmpty)
+                    Text('Nenhuma informação cadastrada', style: TextStyle(color: widget.muted, fontSize: 12))
+                  else
+                    for (final item in categories[i].$2.take(2))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Padding(padding: const EdgeInsets.only(top: 5), child: Icon(Icons.circle, color: categories[i].$3, size: 8)),
+                          const SizedBox(width: 6),
+                          Expanded(child: Text(_itemLabel(item), maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(color: widget.foreground, fontSize: 12.5, height: 1.3))),
+                        ]),
+                      ),
+                ]),
+              ),
+            ),
+          ],
+        ]),
+      ),
+    );
   }
 
   Widget _recentAttendance(BuildContext context, {bool initialOnly = false}) {
@@ -441,8 +570,8 @@ class _RecordContentState extends State<_RecordContent> {
       );
     }
     final shown = initialOnly ? entries.take(1) : entries.take(4);
-    return Column(children: [
-      for (final item in shown) _attendanceRow(item),
+    return _rowsBox([
+      for (final item in shown) _attendanceRow(item, highlight: initialOnly),
     ]);
   }
 
@@ -466,8 +595,9 @@ class _RecordContentState extends State<_RecordContent> {
             initialOnly
                 ? 'As avaliações iniciais de Semiologia deste paciente serão exibidas aqui.'
                 : 'Os atendimentos registrados serão exibidos nesta lista.',
-          ),
-        for (final item in entries) _attendanceRow(item),
+          )
+        else
+          _rowsBox([for (final item in entries) _attendanceRow(item, highlight: initialOnly)]),
         if (widget.canStartAttendance) ...[
           const SizedBox(height: 12),
           SizedBox(
@@ -475,7 +605,13 @@ class _RecordContentState extends State<_RecordContent> {
             child: OutlinedButton.icon(
               onPressed: _startAttendance,
               icon: const Icon(Icons.add),
-              label: Text(initialOnly ? 'Nova avaliação inicial' : 'Novo atendimento'),
+              label: Text(initialOnly ? 'Nova avaliação inicial' : 'Novo atendimento', style: const TextStyle(fontWeight: FontWeight.w700)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: widget.dark ? AppTheme.gold : AppTheme.navy,
+                minimumSize: const Size.fromHeight(50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                side: BorderSide(color: widget.dark ? AppTheme.gold : AppTheme.navy, width: 1.4),
+              ),
             ),
           ),
         ],
@@ -500,6 +636,12 @@ class _RecordContentState extends State<_RecordContent> {
             : null,
         icon: const Icon(Icons.grid_view_rounded),
         label: const Text('Abrir odontograma'),
+        style: FilledButton.styleFrom(
+          backgroundColor: widget.dark ? AppTheme.gold : AppTheme.navy,
+          foregroundColor: widget.dark ? AppTheme.navy : Colors.white,
+          minimumSize: const Size(0, 48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       ),
       if (paciente.prontuarioId == null)
         Padding(padding: const EdgeInsets.only(top: 8), child: Text('O prontuario_id não foi retornado pela API.', style: TextStyle(color: widget.muted))),
@@ -509,11 +651,11 @@ class _RecordContentState extends State<_RecordContent> {
   Widget _emptySection(Color surface, Color line, IconData icon, String title, String message) => Container(
     width: double.infinity,
     padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(color: surface, border: Border.all(color: line), borderRadius: BorderRadius.circular(15)),
+    decoration: BoxDecoration(color: surface, border: Border.all(color: line), borderRadius: BorderRadius.circular(16)),
     child: Column(children: [
       Icon(icon, size: 35, color: widget.dark ? AppTheme.gold : AppTheme.navy),
       const SizedBox(height: 7),
-      Text(title, style: TextStyle(color: widget.foreground, fontSize: 16, fontWeight: FontWeight.w700)),
+      Text(title, style: TextStyle(color: _heading(widget.dark), fontSize: 16, fontWeight: FontWeight.w800)),
       const SizedBox(height: 4),
       Text(message, textAlign: TextAlign.center, style: TextStyle(color: widget.muted, fontSize: 13)),
     ]),
@@ -531,6 +673,29 @@ class _RecordContentState extends State<_RecordContent> {
   }
 }
 
+
+class _PillButton extends StatelessWidget {
+  const _PillButton({required this.dark, required this.label, required this.onPressed});
+  final bool dark;
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) => TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          backgroundColor: _softFill(dark),
+          foregroundColor: dark ? AppTheme.darkText : AppTheme.navy,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          minimumSize: const Size(0, 38),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+        ),
+        child: Text(label),
+      );
+}
+
+
 class _PatientProfileCard extends StatelessWidget {
   const _PatientProfileCard({required this.paciente, required this.prontuarioId, required this.expanded, required this.onToggle, required this.foreground, required this.muted, required this.dark});
   final PacienteModel paciente;
@@ -545,31 +710,56 @@ class _PatientProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final border = dark ? const Color(0xFF263A56) : const Color(0xFFE6EBF4);
     final initials = _initials(paciente.nomeCompleto);
+    final iconColor = dark ? AppTheme.gold : AppTheme.navy;
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: dark ? AppTheme.darkSurface : Colors.white, border: Border.all(color: border), borderRadius: BorderRadius.circular(18), boxShadow: dark ? null : [BoxShadow(color: const Color(0xFF102B53).withValues(alpha: .05), blurRadius: 12, offset: const Offset(0, 4))]),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: dark ? AppTheme.darkSurface : Colors.white,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: dark ? null : [BoxShadow(color: const Color(0xFF102B53).withValues(alpha: .07), blurRadius: 16, offset: const Offset(0, 5))],
+      ),
       child: Column(children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-          CircleAvatar(radius: 34, backgroundColor: dark ? const Color(0xFF0A356D) : const Color(0xFFE4EAF8), foregroundColor: dark ? const Color(0xFFE3ECFC) : AppTheme.navy, child: Text(initials, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w700))),
-          const SizedBox(width: 12),
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          CircleAvatar(
+            radius: 38,
+            backgroundColor: dark ? const Color(0xFF0A356D) : const Color(0xFFE4ECFB),
+            foregroundColor: dark ? const Color(0xFFE3ECFC) : AppTheme.navy,
+            child: Text(initials, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+          ),
+          const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(paciente.nomeCompleto ?? 'Paciente', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: foreground, fontSize: 19, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text('CPF: ${_maskCpf(paciente.cpf)}   •   ${_formatBirth(paciente.dataNascimento)}   •   ${paciente.sexo ?? 'Sexo não informado'}', maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 12)),
+            Text(paciente.nomeCompleto ?? 'Paciente', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _heading(dark), fontSize: 23, fontWeight: FontWeight.w800, letterSpacing: -.4)),
+            const SizedBox(height: 6),
+            Text('CPF: ${_maskCpf(paciente.cpf)}   •   ${_formatBirth(paciente.dataNascimento)}   •   ${paciente.sexo ?? 'Sexo não informado'}', maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: foreground, fontSize: 12.5)),
             if (paciente.celular != null || paciente.rg != null) ...[
-              const SizedBox(height: 5),
-              Row(children: [
-                if (paciente.celular != null) ...[Icon(Icons.call_outlined, size: 16, color: dark ? AppTheme.gold : AppTheme.navy), const SizedBox(width: 5), Flexible(child: Text(paciente.celular!, style: TextStyle(color: muted, fontSize: 12)))],
-                if (paciente.rg != null) ...[const SizedBox(width: 12), Icon(Icons.badge_outlined, size: 16, color: dark ? AppTheme.gold : AppTheme.navy), const SizedBox(width: 4), Flexible(child: Text('RG: ${paciente.rg}', style: TextStyle(color: muted, fontSize: 12)))],
+              const SizedBox(height: 10),
+              Wrap(spacing: 16, runSpacing: 6, children: [
+                if (paciente.celular != null)
+                  Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.call_outlined, size: 18, color: iconColor), const SizedBox(width: 6), Text(paciente.celular!, style: TextStyle(color: foreground, fontSize: 13))]),
+                if (paciente.rg != null)
+                  Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.badge_outlined, size: 18, color: iconColor), const SizedBox(width: 6), Text('RG: ${paciente.rg}', style: TextStyle(color: foreground, fontSize: 13))]),
               ]),
             ],
           ])),
         ]),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Row(children: [
-          Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: dark ? const Color(0xFF40350E) : const Color(0xFFFFF5D8), border: Border.all(color: AppTheme.gold), borderRadius: BorderRadius.circular(18)), child: Text('Código: ${prontuarioId.toString().padLeft(6, '0')}', style: TextStyle(color: foreground, fontSize: 12, fontWeight: FontWeight.w600))),
-          const Spacer(),
-          TextButton.icon(onPressed: onToggle, icon: Icon(expanded ? Icons.expand_less : Icons.expand_more, size: 19), label: Text(expanded ? 'Ver menos' : 'Ver mais'), style: TextButton.styleFrom(foregroundColor: dark ? AppTheme.gold : AppTheme.navy)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(color: dark ? const Color(0xFF40350E) : const Color(0xFFFFF1C2), border: Border.all(color: AppTheme.gold), borderRadius: BorderRadius.circular(18)),
+            child: Text('Código: ${prontuarioId.toString().padLeft(6, '0')}', style: TextStyle(color: dark ? AppTheme.darkText : AppTheme.navy, fontSize: 12.5, fontWeight: FontWeight.w700)),
+          ),
+          Expanded(
+            child: Center(
+              child: TextButton.icon(
+                onPressed: onToggle,
+                icon: Icon(expanded ? Icons.expand_less : Icons.expand_more, size: 20),
+                label: Text(expanded ? 'Ver menos' : 'Ver mais'),
+                style: TextButton.styleFrom(foregroundColor: dark ? AppTheme.darkText : AppTheme.navy, textStyle: const TextStyle(fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ),
         ]),
         if (expanded) ...[
           Divider(color: border),
@@ -582,6 +772,7 @@ class _PatientProfileCard extends StatelessWidget {
     );
   }
 }
+
 
 class _RecordTabs extends StatelessWidget {
   const _RecordTabs({required this.selected, required this.dark, required this.onSelected});
@@ -599,28 +790,59 @@ class _RecordTabs extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) => Container(
-    color: dark ? const Color(0xFF0C1A2D) : Colors.white,
-    child: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(children: [
-        for (var i = 0; i < tabs.length; i++)
-          InkWell(
-            onTap: () => onSelected(i),
-            child: Container(
-              constraints: const BoxConstraints(minWidth: 94),
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 7),
-              decoration: BoxDecoration(border: Border(bottom: BorderSide(color: selected == i ? (dark ? AppTheme.gold : AppTheme.navy) : Colors.transparent, width: 3))),
-              child: Column(children: [
-                Icon(tabs[i].$1, color: selected == i ? (dark ? AppTheme.gold : AppTheme.navy) : (dark ? const Color(0xFF9DAFCC) : const Color(0xFF516887)), size: 23),
-                const SizedBox(height: 3),
-                Text(tabs[i].$2, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: selected == i ? (dark ? AppTheme.gold : AppTheme.navy) : (dark ? const Color(0xFF9DAFCC) : const Color(0xFF516887)), fontSize: 10, fontWeight: selected == i ? FontWeight.w700 : FontWeight.normal)),
-              ]),
-            ),
-          ),
-      ]),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final line = dark ? const Color(0xFF263A56) : const Color(0xFFE3E9F3);
+    final idle = dark ? const Color(0xFF9DAFCC) : const Color(0xFF1E3A8A);
+    final on = dark ? AppTheme.gold : AppTheme.navy;
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: dark ? const Color(0xFF0C1A2D) : Colors.white,
+        border: Border.all(color: line),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: dark ? null : [BoxShadow(color: const Color(0xFF102B53).withValues(alpha: .05), blurRadius: 10, offset: const Offset(0, 3))],
+      ),
+      child: LayoutBuilder(builder: (context, box) {
+        final itemWidth = (box.maxWidth / tabs.length) < 88 ? 88.0 : box.maxWidth / tabs.length;
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            for (var i = 0; i < tabs.length; i++) ...[
+              if (i > 0) Container(width: 1, height: 46, color: line),
+              InkWell(
+                onTap: () => onSelected(i),
+                child: Container(
+                  width: itemWidth - (i > 0 ? 1 : 0),
+                  height: 82,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(border: Border(bottom: BorderSide(color: selected == i ? AppTheme.gold : Colors.transparent, width: 3))),
+                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    selected == i
+                        ? Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(color: on, borderRadius: BorderRadius.circular(9)),
+                            child: Icon(tabs[i].$1, color: dark ? AppTheme.navy : Colors.white, size: 20),
+                          )
+                        : SizedBox(width: 34, height: 34, child: Icon(tabs[i].$1, color: idle, size: 26)),
+                    const SizedBox(height: 5),
+                    Text(
+                      tabs[i].$2,
+                      maxLines: 2,
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: selected == i ? on : idle, fontSize: 11.5, height: 1.15, fontWeight: selected == i ? FontWeight.w800 : FontWeight.w500),
+                    ),
+                  ]),
+                ),
+              ),
+            ],
+          ]),
+        );
+      }),
+    );
+  }
 }
 
 class _SectionCard extends StatelessWidget {
@@ -632,19 +854,35 @@ class _SectionCard extends StatelessWidget {
   final Widget? trailing;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(color: surface, border: Border.all(color: line), borderRadius: BorderRadius.circular(16), boxShadow: Theme.of(context).brightness == Brightness.dark ? null : [BoxShadow(color: const Color(0xFF102B53).withValues(alpha: .035), blurRadius: 10, offset: const Offset(0, 3))]),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Row(children: [Expanded(child: Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.w800))), if (trailing != null) trailing!]),
-      const SizedBox(height: 7),
-      child,
-    ]),
-  );
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: surface,
+        border: Border.all(color: line),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: dark ? null : [BoxShadow(color: const Color(0xFF102B53).withValues(alpha: .04), blurRadius: 12, offset: const Offset(0, 3))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          Expanded(child: Text(title, style: TextStyle(color: _heading(dark), fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: -.3))),
+          if (trailing != null)
+            TextButtonTheme(
+              data: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: _link(dark), textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14))),
+              child: trailing!,
+            ),
+        ]),
+        const SizedBox(height: 10),
+        child,
+      ]),
+    );
+  }
 }
 
+
 class _AttendanceRow extends StatelessWidget {
-  const _AttendanceRow({required this.item, required this.dark, required this.foreground, required this.muted, required this.canManage, required this.canView, this.onView, required this.onEdit, required this.onDelete});
+  const _AttendanceRow({required this.item, required this.dark, required this.foreground, required this.muted, required this.canManage, required this.canView, this.onView, required this.onEdit, required this.onDelete, this.highlight = false});
   final Map<String, dynamic> item;
   final bool dark;
   final Color foreground;
@@ -655,9 +893,11 @@ class _AttendanceRow extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
+  final bool highlight;
+
   @override
   Widget build(BuildContext context) {
-    final title = _firstValue(item, ['especialidade_nome', 'especialidade', 'tipo', 'titulo', 'nome']) ?? 'Atendimento';
+    final rawTitle = _firstValue(item, ['especialidade_nome', 'especialidade', 'tipo', 'titulo', 'nome']) ?? 'Atendimento';
     final detail = _firstValue(item, ['descricao', 'queixa_principal', 'procedimento', 'observacao']) ?? 'Avaliação clínica';
     final date = _firstValue(item, ['data_atendimento', 'iniciado_em', 'criado_em', 'data', 'created_at']) ?? 'Data não informada';
     final nestedFicha = item['ficha'];
@@ -674,17 +914,50 @@ class _AttendanceRow extends StatelessWidget {
     final correctionNote = item['observacao_correcao']?.toString();
     final student = item['aluno_responsavel'];
     final studentName = student is Map ? student['nome']?.toString() : item['aluno']?.toString();
-    return Container(
-      margin: const EdgeInsets.only(bottom: 7),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-      decoration: BoxDecoration(color: dark ? const Color(0xFF0D1B2E) : const Color(0xFFFCFDFF), border: Border.all(color: dark ? const Color(0xFF263A56) : const Color(0xFFE5EAF3)), borderRadius: BorderRadius.circular(13)),
-      child: Row(children: [
-        CircleAvatar(radius: 23, backgroundColor: dark ? const Color(0xFF172A45) : const Color(0xFFEDF2FB), foregroundColor: dark ? AppTheme.gold : AppTheme.navy, child: const Icon(Icons.medical_services_outlined, size: 23)),
-        const SizedBox(width: 10),
+    final reviewer = _firstValue(item, ['professor', 'professor_responsavel', 'revisor', 'aprovado_por']);
+
+    final title = highlight ? 'Realizada em $date' : rawTitle;
+    final accent = dark ? AppTheme.gold : AppTheme.navy;
+    final showView = canView && hasFicha;
+
+    final viewAction = !showView
+        ? null
+        : highlight
+            ? _PillButton(dark: dark, label: 'Visualizar', onPressed: onView)
+            : IconButton(
+                tooltip: 'Visualizar ficha',
+                onPressed: onView,
+                icon: Icon(Icons.chevron_right, color: dark ? AppTheme.darkText : AppTheme.navy, size: 26),
+                constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+              );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+        CircleAvatar(
+          radius: 26,
+          backgroundColor: dark ? const Color(0xFF172A45) : const Color(0xFFEDF2FB),
+          foregroundColor: accent,
+          child: Icon(highlight ? Icons.assignment_outlined : Icons.medical_services_outlined, size: 26),
+        ),
+        const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: foreground, fontSize: 14, fontWeight: FontWeight.w700)),
-          Text(detail, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 12)),
-          Text('$date${studentName == null ? '' : '  •  Aluno: $studentName'}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 11)),
+          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: _heading(dark), fontSize: 15.5, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 2),
+          Text(
+            highlight ? (studentName == null ? detail : 'Aluno: $studentName') : detail,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: foreground, fontSize: 13),
+          ),
+          if (!highlight)
+            Text('$date${studentName == null ? '' : '  •  Aluno: $studentName'}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 12)),
+          if (highlight && status != null && color != null) ...[
+            const SizedBox(height: 5),
+            _StatusChip(label: status, color: color, dark: dark),
+          ],
           if (correctionNote?.trim().isNotEmpty == true)
             Padding(
               padding: const EdgeInsets.only(top: 5),
@@ -694,75 +967,60 @@ class _AttendanceRow extends StatelessWidget {
               ),
             ),
         ])),
-        const SizedBox(width: 6),
-        SizedBox(
-          width: 128,
+        const SizedBox(width: 8),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 140),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (status != null && color != null)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 128),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: dark ? .18 : .12),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      status,
-                      maxLines: 2,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700),
-                    ),
-                  ),
+              if (!highlight && status != null && color != null) _StatusChip(label: status, color: color, dark: dark),
+              if (reviewer != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text('Por: $reviewer', textAlign: TextAlign.right, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 11.5)),
                 ),
-              if (canView && hasFicha)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    tooltip: 'Visualizar ficha',
-                    onPressed: onView,
-                    icon: Icon(Icons.visibility_outlined, color: dark ? AppTheme.gold : AppTheme.navy, size: 19),
-                    constraints: const BoxConstraints.tightFor(width: 38, height: 36),
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                if (canManage && canEdit)
+                  IconButton(
+                    tooltip: 'Editar ficha',
+                    onPressed: onEdit,
+                    icon: Icon(Icons.edit_outlined, color: accent, size: 20),
+                    constraints: const BoxConstraints.tightFor(width: 34, height: 34),
                     padding: EdgeInsets.zero,
                     visualDensity: VisualDensity.compact,
                   ),
-                ),
-              if (canManage) ...[
-                if (canEdit)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: IconButton(
-                      tooltip: 'Editar ficha',
-                      onPressed: onEdit,
-                      icon: Icon(Icons.edit_outlined, color: dark ? AppTheme.gold : AppTheme.navy, size: 19),
-                      constraints: const BoxConstraints.tightFor(width: 38, height: 36),
-                      padding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
-                    ),
+                if (canManage && (isDraft || !hasFicha))
+                  IconButton(
+                    tooltip: isDraft ? 'Excluir rascunho' : 'Excluir atendimento',
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete_outline, color: Color(0xFFD92332), size: 20),
+                    constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
                   ),
-                if (isDraft || !hasFicha)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: IconButton(
-                      tooltip: isDraft ? 'Excluir rascunho' : 'Excluir atendimento',
-                      onPressed: onDelete,
-                      icon: const Icon(Icons.delete_outline, color: Color(0xFFD92332), size: 19),
-                      constraints: const BoxConstraints.tightFor(width: 38, height: 36),
-                      padding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ),
-              ],
+                if (viewAction != null) viewAction,
+              ]),
             ],
           ),
         ),
       ]),
     );
   }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.label, required this.color, required this.dark});
+  final String label;
+  final Color color;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(color: color.withValues(alpha: dark ? .22 : .14), borderRadius: BorderRadius.circular(20)),
+        child: Text(label, maxLines: 2, textAlign: TextAlign.center, style: TextStyle(color: color, fontSize: 11.5, fontWeight: FontWeight.w800)),
+      );
 }
 
 class _DetailLine extends StatelessWidget {
@@ -791,7 +1049,6 @@ String _maskCpf(String? cpf) {
 String _formatBirth(String? value) {
   if (value == null || value.isEmpty) return 'Nascimento não informado';
   final raw = value.trim();
-  // Datas simples da API podem vir em MM/DD/YYYY; datas ISO permanecem intactas.
   final americanDate = RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{4})$').firstMatch(raw);
   final date = americanDate == null
       ? DateTime.tryParse(raw)
@@ -837,9 +1094,9 @@ String _statusLabel(String status) {
 
 Color _statusColor(String status) {
   final normalized = status.toUpperCase();
-  if (normalized.contains('RASCUN')) return const Color(0xFF3973C9);
+  if (normalized.contains('RASCUN')) return const Color(0xFF64748B);
   if (normalized.contains('CORRE')) return const Color(0xFFD92332);
-  if (normalized.contains('AGUARD') || normalized.contains('PEND')) return const Color(0xFFDB9700);
+  if (normalized.contains('AGUARD') || normalized.contains('PEND')) return const Color(0xFF1D4ED8);
   if (normalized.contains('APROV')) return const Color(0xFF16813A);
   return const Color(0xFFE59A00);
 }

@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-
 import '../../core/network/api_client.dart';
 import '../../core/network/api_errors.dart';
 import '../../core/network/auth_token_store.dart';
@@ -7,7 +5,10 @@ import '../../models/auth_model.dart';
 import '../../models/usuario_model.dart';
 
 class AutenticacaoRepository {
-  const AutenticacaoRepository({required this.apiClient, required this.tokenStore});
+  const AutenticacaoRepository({
+    required this.apiClient,
+    required this.tokenStore,
+  });
 
   final ApiClient apiClient;
   final AuthTokenStore tokenStore;
@@ -55,7 +56,10 @@ class AutenticacaoRepository {
         .toList(growable: false);
   }
 
-  Future<UsuarioModel> updateUsuarioStatus(int id, {required bool ativo}) async {
+  Future<UsuarioModel> updateUsuarioStatus(
+    int id, {
+    required bool ativo,
+  }) async {
     final response = await apiClient.dio.patch<Map<String, dynamic>>(
       'usuarios/$id/status',
       data: {'ativo': ativo},
@@ -95,6 +99,37 @@ class AutenticacaoRepository {
     return UsuarioModel.fromJson(data);
   }
 
+  Future<UsuarioModel> updateUsuario(
+    int id, {
+    required String nome,
+    required String email,
+    required PerfilUsuario perfil,
+    String? matricula,
+    String? senha,
+  }) async {
+    final response = await apiClient.dio.put<Map<String, dynamic>>(
+      'usuarios/$id',
+      data: {
+        'nome': nome,
+        'email': email,
+        'perfil': perfil.apiValue,
+        'matricula': matricula,
+        if (senha != null && senha.isNotEmpty) 'senha': senha,
+      },
+    );
+    final data = response.data;
+    if (data == null) {
+      throw const FormatException(
+        'A API retornou uma resposta vazia ao atualizar o usuário.',
+      );
+    }
+    return UsuarioModel.fromJson(data);
+  }
+
+  Future<void> deleteUsuario(int id) async {
+    await apiClient.dio.delete<void>('usuarios/$id');
+  }
+
   /// Pede o código de recuperação por e-mail. A API responde igual
   /// para e-mails cadastrados ou não (não revela quais existem).
   Future<void> requestPasswordReset(String email) async {
@@ -120,37 +155,9 @@ class AutenticacaoRepository {
   void clearAccessToken() => tokenStore.clear();
 
   static String userMessageFor(Object error) {
-    if (error is FormatException) {
-      return 'A resposta do servidor está fora do formato esperado.';
-    }
-    if (error is DioException) {
-      final statusCode = error.response?.statusCode;
-      if (statusCode == 400 || statusCode == 401) {
-        return 'Credenciais inválidas ou usuário inativo.';
-      }
-      if (statusCode == 403) {
-        return 'Seu perfil não tem permissão para acessar este recurso.';
-      }
-      if (statusCode == 422) {
-        return 'Confira os dados informados e tente novamente.';
-      }
-      if (statusCode == 409) {
-        return 'Já existe um usuário cadastrado com este e-mail.';
-      }
-      if (statusCode == 503 && serverDetail(error) != null) {
-        // O backend explica a causa (ex.: banco não inicializado) e como resolver.
-        return serverDetail(error)!;
-      }
-      if (statusCode != null && statusCode >= 500) {
-        return 'O serviço está indisponível no momento. Tente novamente mais tarde.';
-      }
-      if (error.type == DioExceptionType.connectionError ||
-          error.type == DioExceptionType.connectionTimeout ||
-          error.type == DioExceptionType.receiveTimeout ||
-          error.type == DioExceptionType.sendTimeout) {
-        return 'Não foi possível conectar à API. Verifique o endereço e tente novamente.';
-      }
-    }
-    return 'Não foi possível entrar. Tente novamente.';
+    return apiErrorMessage(
+      error,
+      fallback: 'Não foi possível concluir a operação. Tente novamente.',
+    );
   }
 }

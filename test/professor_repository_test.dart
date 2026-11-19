@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:ondonto_uninassau/core/network/api_client.dart';
+import 'package:ondonto_uninassau/core/network/auth_token_store.dart';
 import 'package:ondonto_uninassau/models/professor_ficha_model.dart';
+import 'package:ondonto_uninassau/services/repositories/autenticacao_repository.dart';
 import 'package:ondonto_uninassau/services/repositories/professor_repository.dart';
+import 'package:ondonto_uninassau/view_models/autenticacao_view_model.dart';
 import 'package:ondonto_uninassau/view_models/tema_view_model.dart';
 import 'package:ondonto_uninassau/view_models/professor_view_model.dart';
 import 'package:ondonto_uninassau/views/professor/revisar_fichas_view.dart';
@@ -70,6 +73,70 @@ void main() {
     expect(adapter.requests, isEmpty);
   });
 
+  testWidgets('review screen submits a professor correction decision', (
+    tester,
+  ) async {
+    final adapter = _ProfessorAdapter();
+    final api = ApiClient(
+      dio: Dio(BaseOptions(baseUrl: 'https://test.invalid/api/v1'))
+        ..httpClientAdapter = adapter,
+    );
+    final model = ProfessorViewModel(
+      repository: ProfessorRepository(apiClient: api),
+    );
+    await tester.runAsync(() => model.loadFicha(201));
+    final auth = AutenticacaoViewModel(
+      repository: AutenticacaoRepository(
+        apiClient: api,
+        tokenStore: AuthTokenStore(),
+      ),
+    );
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: model,
+        child: ChangeNotifierProvider.value(
+          value: auth,
+          child: ChangeNotifierProvider(
+            create: (_) => TemaViewModel(),
+            child: MaterialApp(
+              home: Builder(
+                builder: (context) => Scaffold(
+                  body: Center(
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const RevisarFichasView(),
+                        ),
+                      ),
+                      child: const Text('Abrir revisão'),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Abrir revisão'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Detalhar o diagnóstico.');
+    await tester.ensureVisible(find.text('Devolver para correção'));
+    await tester.tap(find.text('Devolver para correção'));
+    await tester.pumpAndSettle();
+
+    final decision = adapter.requests.singleWhere(
+      (request) => request.path == 'fichas/201/aprovacoes',
+    );
+    expect(decision.data, {
+      'decisao': 'CORRECAO_SOLICITADA',
+      'observacao': 'Detalhar o diagnóstico.',
+    });
+    expect(find.text('Abrir revisão'), findsOneWidget);
+  });
+
   testWidgets('presents semiology as readable clinical sections', (
     tester,
   ) async {
@@ -85,20 +152,28 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider.value(
         value: model,
-        child: ChangeNotifierProvider(
-          create: (_) => TemaViewModel(),
-          child: const MaterialApp(home: RevisarFichasView()),
+        child: ChangeNotifierProvider.value(
+          value: AutenticacaoViewModel(
+            repository: AutenticacaoRepository(
+              apiClient: ApiClient(
+                dio: Dio(BaseOptions(baseUrl: 'https://test.invalid/api/v1'))
+                  ..httpClientAdapter = _ProfessorAdapter(),
+              ),
+              tokenStore: AuthTokenStore(),
+            ),
+          ),
+          child: ChangeNotifierProvider(
+            create: (_) => TemaViewModel(),
+            child: const MaterialApp(home: RevisarFichasView()),
+          ),
         ),
       ),
     );
 
-    expect(find.text('Resumo da ficha'), findsOneWidget);
-    expect(find.text('Queixa e história atual'), findsOneWidget);
-    expect(
-      find.text('Histórico médico, medicamentos e alergias'),
-      findsOneWidget,
-    );
-    expect(find.text('Hábitos e história odontológica'), findsOneWidget);
+    expect(find.text('Revisão de ficha'), findsOneWidget);
+    expect(find.textContaining('Queixa e'), findsOneWidget);
+    expect(find.text('Medicamentos e alergias'), findsOneWidget);
+    expect(find.textContaining('odontol'), findsOneWidget);
     expect(find.text('Dipirona; alergia a látex.'), findsOneWidget);
     expect(find.text('Escova duas vezes ao dia.'), findsOneWidget);
   });

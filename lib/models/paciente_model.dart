@@ -51,4 +51,13 @@ class PacienteModel {
     if (sexo != null) 'sexo': sexo,
     if (celular != null) 'celular': celular,
   };
+
+  Map<String, dynamic> toUpdateJson() => {
+    if (nomeCompleto != null) 'nome_completo': nomeCompleto,
+    'cpf': cpf,
+    'rg': rg,
+    'data_nascimento': dataNascimento,
+    'sexo': sexo,
+    'celular': celular,
+  };
 }

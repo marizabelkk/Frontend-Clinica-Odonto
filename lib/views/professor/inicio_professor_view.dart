@@ -9,6 +9,7 @@ import '../../widgets/botao_alternar_tema.dart';
 import '../../widgets/menu_lateral_professor.dart';
 import '../autenticacao/entrar_view.dart';
 import '../pacientes/buscar_paciente_view.dart';
+import 'pendencias_professor_view.dart';
 import 'revisar_fichas_view.dart';
 
 class InicioProfessorView extends StatefulWidget {
@@ -45,12 +46,17 @@ class _InicioProfessorViewState extends State<InicioProfessorView> {
     Navigator.of(context).pushAndRemoveUntil<void>(MaterialPageRoute<void>(builder: (_) => const EntrarView()), (_) => false);
   }
 
+  void _openPending() {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const PendenciasProfessorView()),
+    );
+  }
+
   void _selectMenu(String item) {
     if (item == 'Pacientes' || item == 'Prontuários') {
       Navigator.of(context).push<void>(MaterialPageRoute<void>(builder: (_) => const BuscarPacienteView()));
     } else if (item == 'Pendências') {
-      final pending = context.read<ProfessorViewModel>().pending;
-      if (pending.isNotEmpty) _review(pending.first);
+      _openPending();
     } else if (item != 'Início') {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$item estará disponível nesta área em breve.')));
     }
@@ -94,7 +100,7 @@ class _InicioProfessorViewState extends State<InicioProfessorView> {
                 const SizedBox(height: 16),
                 LayoutBuilder(builder: (context, box) {
                   final wide = box.maxWidth >= 900;
-                  final table = _Panel(title: 'Pendências de aprovação', action: 'Atualizar', onAction: model.loadPending, card: card, line: line, foreground: colors.onSurface, child: _pendingContent(model, dark, colors.onSurface, muted, line));
+                  final table = _Panel(title: 'Pendências de aprovação', action: 'Ver todas', onAction: _openPending, card: card, line: line, foreground: colors.onSurface, child: _pendingContent(model, dark, colors.onSurface, muted, line));
                   final side = Column(children: [
                     _Panel(title: 'Devolvidas para correção', action: 'Ver todas', onAction: () => _selectMenu('Devolvidas'), card: card, line: line, foreground: colors.onSurface, child: _EmptyActivity(icon: Icons.reply, message: 'Nenhuma ficha devolvida para correção.', muted: muted)),
                     const SizedBox(height: 12),
@@ -103,9 +109,9 @@ class _InicioProfessorViewState extends State<InicioProfessorView> {
                   final lower = Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Expanded(child: _Panel(title: 'Busca rápida de paciente', card: card, line: line, foreground: colors.onSurface, child: _PatientSearch(dark: dark, muted: muted, onTap: () => Navigator.of(context).push<void>(MaterialPageRoute<void>(builder: (_) => const BuscarPacienteView()))))),
                     const SizedBox(width: 12),
-                    Expanded(child: _Panel(title: 'Ações rápidas', card: card, line: line, foreground: colors.onSurface, child: _QuickActions(dark: dark, foreground: colors.onSurface, muted: muted, onSearch: () => Navigator.of(context).push<void>(MaterialPageRoute<void>(builder: (_) => const BuscarPacienteView())), onReview: pending.isEmpty ? null : () => _review(pending.first)))),
+                    Expanded(child: _Panel(title: 'Ações rápidas', card: card, line: line, foreground: colors.onSurface, child: _QuickActions(dark: dark, foreground: colors.onSurface, muted: muted, onSearch: () => Navigator.of(context).push<void>(MaterialPageRoute<void>(builder: (_) => const BuscarPacienteView())), onReview: _openPending))),
                   ]);
-                  if (!wide) return Column(children: [table, const SizedBox(height: 12), side, const SizedBox(height: 12), _Panel(title: 'Busca rápida de paciente', card: card, line: line, foreground: colors.onSurface, child: _PatientSearch(dark: dark, muted: muted, onTap: () => Navigator.of(context).push<void>(MaterialPageRoute<void>(builder: (_) => const BuscarPacienteView())))), const SizedBox(height: 12), _Panel(title: 'Ações rápidas', card: card, line: line, foreground: colors.onSurface, child: _QuickActions(dark: dark, foreground: colors.onSurface, muted: muted, onSearch: () => Navigator.of(context).push<void>(MaterialPageRoute<void>(builder: (_) => const BuscarPacienteView())), onReview: pending.isEmpty ? null : () => _review(pending.first)))]);
+                  if (!wide) return Column(children: [table, const SizedBox(height: 12), side, const SizedBox(height: 12), _Panel(title: 'Busca rápida de paciente', card: card, line: line, foreground: colors.onSurface, child: _PatientSearch(dark: dark, muted: muted, onTap: () => Navigator.of(context).push<void>(MaterialPageRoute<void>(builder: (_) => const BuscarPacienteView())))), const SizedBox(height: 12), _Panel(title: 'Ações rápidas', card: card, line: line, foreground: colors.onSurface, child: _QuickActions(dark: dark, foreground: colors.onSurface, muted: muted, onSearch: () => Navigator.of(context).push<void>(MaterialPageRoute<void>(builder: (_) => const BuscarPacienteView())), onReview: _openPending))]);
                   return Column(children: [Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(flex: 7, child: Column(children: [table, const SizedBox(height: 12), lower])), const SizedBox(width: 14), Expanded(flex: 3, child: side)]), const SizedBox(height: 12), _PrivacyBanner(dark: dark, card: card, line: line, foreground: colors.onSurface, muted: muted)]);
                 }),
                 if (model.errorMessage != null && pending.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12), child: Text(model.errorMessage!, style: TextStyle(color: muted))),

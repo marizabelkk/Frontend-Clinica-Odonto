@@ -79,12 +79,7 @@ class EstruturaAutenticacao extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     return Column(
       children: [
-        Image.asset(
-          'assets/images/uninassau_odontologia_logo.png',
-          width: 88,
-          height: 88,
-          fit: BoxFit.contain,
-        ),
+        logo(size: 88),
         const SizedBox(height: 8),
         Text(
           'Clínica Odonto',
@@ -96,6 +91,14 @@ class EstruturaAutenticacao extends StatelessWidget {
       ],
     );
   }
+
+  static Widget logo({required double size}) => Image.asset(
+    'assets/images/uninassau_odontologia_logo.png',
+    width: size,
+    height: size,
+    fit: BoxFit.contain,
+    semanticLabel: 'Logo de Odontologia UNINASSAU',
+  );
 
   @override
   Widget build(BuildContext context) {

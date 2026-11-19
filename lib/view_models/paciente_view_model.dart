@@ -15,6 +15,7 @@ class PacienteViewModel extends ChangeNotifier {
   String? _errorMessage;
   bool _isLoading = false;
   bool _isCreating = false;
+  bool _isDeleting = false;
 
   List<PacienteModel> get pacientes => _pacientes;
   PacienteModel? get pacienteAtual => _pacienteAtual;
@@ -22,6 +23,7 @@ class PacienteViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
   bool get isCreating => _isCreating;
+  bool get isDeleting => _isDeleting;
 
   Future<void> loadPatients({String? query}) async {
     _isLoading = true;
@@ -64,6 +66,40 @@ class PacienteViewModel extends ChangeNotifier {
       return null;
     } finally {
       _isCreating = false;
+      notifyListeners();
+    }
+  }
+
+  Future<PacienteModel?> updatePatient(PacienteModel paciente) async {
+    _isCreating = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      return await repository.updatePatient(paciente);
+    } catch (error) {
+      _errorMessage = PacienteRepository.userMessageFor(error);
+      return null;
+    } finally {
+      _isCreating = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deletePatient(int id) async {
+    _isDeleting = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await repository.deletePatient(id);
+      _pacientes = _pacientes
+          .where((patient) => patient.pacienteId != id)
+          .toList();
+      return true;
+    } catch (error) {
+      _errorMessage = PacienteRepository.userMessageFor(error);
+      return false;
+    } finally {
+      _isDeleting = false;
       notifyListeners();
     }
   }

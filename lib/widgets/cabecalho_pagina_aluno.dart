@@ -36,9 +36,9 @@ class CabecalhoPaginaAluno extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: safeTop + 4,
             left: compact ? 8 : 20,
             right: 4,
+            top: safeTop + (compact ? 28 : 34),
             child: Row(children: [
               IconButton(
                 tooltip: 'Voltar',

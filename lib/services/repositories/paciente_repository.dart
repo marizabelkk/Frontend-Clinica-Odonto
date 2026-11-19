@@ -9,7 +9,10 @@ class PacienteRepository {
 
   final ApiClient apiClient;
 
-  Future<List<PacienteModel>> searchPatients({String? nome, String? cpf}) async {
+  Future<List<PacienteModel>> searchPatients({
+    String? nome,
+    String? cpf,
+  }) async {
     final queryParameters = <String, dynamic>{
       if (nome != null && nome.trim().isNotEmpty) 'busca': nome.trim(),
       if (cpf != null && cpf.trim().isNotEmpty) 'cpf': _digitsOnly(cpf),
@@ -60,6 +63,28 @@ class PacienteRepository {
     return PacienteModel.fromJson(data);
   }
 
+  Future<PacienteModel> updatePatient(PacienteModel paciente) async {
+    final id = paciente.pacienteId;
+    if (id == null) {
+      throw const FormatException('O paciente não possui identificador.');
+    }
+    final response = await apiClient.dio.put<Map<String, dynamic>>(
+      'pacientes/$id',
+      data: paciente.toUpdateJson(),
+    );
+    final data = response.data;
+    if (data == null) {
+      throw const FormatException(
+        'A API retornou uma resposta vazia ao atualizar o paciente.',
+      );
+    }
+    return PacienteModel.fromJson(data);
+  }
+
+  Future<void> deletePatient(int id) async {
+    await apiClient.dio.delete<void>('pacientes/$id');
+  }
+
   Future<ProntuarioModel> getProntuario(int pacienteId) async {
     // Contract v2 identifies the patient in this route; this is Paciente.id,
     // not the linked Prontuario.id returned as prontuario_id.
@@ -87,7 +112,12 @@ class PacienteRepository {
       }
       if (statusCode == 404) return 'Paciente ou prontuário não encontrado.';
       if (statusCode == 409) {
-        return 'Já existe um paciente cadastrado com esse CPF.';
+        final data = error.response?.data;
+        if (data is Map) {
+          final message = data['message'] ?? data['detail'] ?? data['erro'];
+          if (message is String && message.isNotEmpty) return message;
+        }
+        return 'A operação não pode ser concluída porque há dados vinculados ao paciente.';
       }
       if (statusCode == 422) {
         return 'A API rejeitou os dados. Revise o cadastro e tente novamente.';
