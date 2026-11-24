@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../view_models/autenticacao_view_model.dart';
-import 'estrutura_autenticacao.dart';
+import 'widgets/estrutura_autenticacao.dart';
 
 /// Passo 2 da recuperação: código recebido por e-mail + nova senha.
 class RedefinirSenhaView extends StatefulWidget {

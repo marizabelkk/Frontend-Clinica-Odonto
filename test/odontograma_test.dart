@@ -7,7 +7,7 @@ import 'package:ondonto_uninassau/core/network/api_client.dart';
 import 'package:ondonto_uninassau/models/odontograma_model.dart';
 import 'package:ondonto_uninassau/services/repositories/odontograma_repository.dart';
 import 'package:ondonto_uninassau/view_models/odontograma_view_model.dart';
-import 'package:ondonto_uninassau/widgets/odontograma/mapa_dentes.dart';
+import 'package:ondonto_uninassau/views/odontograma/widgets/mapa_dentes.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

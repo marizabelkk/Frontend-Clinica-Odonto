@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ondonto_uninassau/widgets/atendimentos/anexos_documentos_demo.dart';
+import 'package:ondonto_uninassau/views/atendimentos/semiologia/widgets/anexos_documentos_demo.dart';
 
 void main() {
   testWidgets('allows selecting a simulated file and labels it as local', (

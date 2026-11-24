@@ -7,7 +7,7 @@ import '../../view_models/paciente_view_model.dart';
 import '../../widgets/cabecalho_pagina_aluno.dart';
 import '../../widgets/navegacao_inferior_aluno.dart';
 import '../atendimentos/meus_atendimentos_view.dart';
-import '../../widgets/navegacao_inferior_recepcao.dart';
+import '../recepcao/widgets/navegacao_inferior_recepcao.dart';
 
 class CadastrarPacienteView extends StatefulWidget {
   const CadastrarPacienteView({

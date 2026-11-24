@@ -6,10 +6,10 @@ import '../../models/professor_ficha_model.dart';
 import '../../view_models/autenticacao_view_model.dart';
 import '../../view_models/professor_view_model.dart';
 import '../../widgets/botao_alternar_tema.dart';
-import '../../widgets/menu_lateral_professor.dart';
+import 'widgets/menu_lateral_professor.dart';
 import '../autenticacao/entrar_view.dart';
 import '../pacientes/buscar_paciente_view.dart';
-import 'pendencias_professor_view.dart';
+import 'pendencias_professor/pendencias_professor_view.dart';
 import 'revisar_fichas_view.dart';
 
 class InicioProfessorView extends StatefulWidget {

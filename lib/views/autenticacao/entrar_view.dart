@@ -7,7 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../view_models/autenticacao_view_model.dart';
 import '../../widgets/botao_alternar_tema.dart';
 import 'direcionador_perfil_view.dart';
-import 'estrutura_autenticacao.dart';
+import 'widgets/estrutura_autenticacao.dart';
 import 'recuperar_senha_view.dart';
 
 /// Contas de teste (backend: `flask bootstrap`). Só aparecem em builds de debug.
@@ -177,7 +177,7 @@ class _LoginViewState extends State<EntrarView> {
               SafeArea(
                 bottom: false,
                 child: Column(children: [
-                  const Align(alignment: Alignment.centerRight, child: Padding(padding: EdgeInsets.only(right: 6), child: BotaoAlternarTema())),
+                  const Align(alignment: Alignment.centerRight, child: Padding(padding: EdgeInsets.only(right: 6), child: BotaoAlternarTema(color: Colors.white))),
                   EstruturaAutenticacao.logo(size: 84),
                   const SizedBox(height: 16),
                   const Text('Clínica Odonto', style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w800, letterSpacing: -.5)),

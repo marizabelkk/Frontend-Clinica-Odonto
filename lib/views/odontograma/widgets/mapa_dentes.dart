@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import '../../models/odontograma_model.dart';
+import '../../../models/odontograma_model.dart';
 
 /// Centro e alcance de toque do dente em pixels do asset do odontograma.
 class FormatoDente {

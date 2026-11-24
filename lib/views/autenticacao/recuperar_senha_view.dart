@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../view_models/autenticacao_view_model.dart';
-import 'estrutura_autenticacao.dart';
+import 'widgets/estrutura_autenticacao.dart';
 import 'redefinir_senha_view.dart';
 
 /// Passo 1 da recuperação: pede o código de 6 dígitos, enviado por e-mail.

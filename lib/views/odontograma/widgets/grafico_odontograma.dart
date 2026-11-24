@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_theme.dart';
-import '../../models/odontograma_model.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../models/odontograma_model.dart';
 import 'mapa_dentes.dart';
 
 /// Imagem do odontograma (numeração FDI) clicável: toque em um dente para

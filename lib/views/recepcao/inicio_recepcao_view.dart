@@ -5,10 +5,10 @@ import '../../core/theme/app_theme.dart';
 import '../../models/paciente_model.dart';
 import '../../view_models/autenticacao_view_model.dart';
 import '../autenticacao/entrar_view.dart';
-import 'cadastrar_paciente_view.dart';
-import 'buscar_paciente_view.dart';
+import '../pacientes/cadastrar_paciente_view.dart';
+import '../pacientes/buscar_paciente_view.dart';
 import '../../widgets/botao_alternar_tema.dart';
-import '../../widgets/navegacao_inferior_recepcao.dart';
+import '../recepcao/widgets/navegacao_inferior_recepcao.dart';
 import '../../widgets/cabecalho_pagina_aluno.dart';
 
 class InicioRecepcaoView extends StatelessWidget {

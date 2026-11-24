@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-import '../../widgets/botao_alternar_tema.dart';
+import '../../../widgets/botao_alternar_tema.dart';
 
 /// Moldura visual das telas de login e recuperação de senha
 /// (fundo com arcos azuis + cartão translúcido), inspirada em `docs/telas/Login_referencia.jpg`.

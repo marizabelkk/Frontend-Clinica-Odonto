@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/app_theme.dart';
-import '../models/usuario_model.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../models/usuario_model.dart';
 
 /// Barra de navegação fixa e reutilizável na área do professor.
 class MenuLateralProfessor extends StatelessWidget {

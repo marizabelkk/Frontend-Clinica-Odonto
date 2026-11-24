@@ -18,6 +18,7 @@ import 'view_models/tema_view_model.dart';
 import 'view_models/paciente_view_model.dart';
 import 'view_models/semiologia_view_model.dart';
 import 'view_models/professor_view_model.dart';
+import 'view_models/administracao_usuarios_view_model.dart';
 import 'views/autenticacao/entrar_view.dart';
 
 void main() {
@@ -71,6 +72,10 @@ class MyApp extends StatelessWidget {
       ChangeNotifierProvider(create: (_) => TemaViewModel()..load()),
       ChangeNotifierProvider(
         create: (_) => AutenticacaoViewModel(repository: authRepository),
+      ),
+      ChangeNotifierProvider(
+        create: (_) =>
+            AdministracaoUsuariosViewModel(authRepository: authRepository),
       ),
       ChangeNotifierProvider(
         create: (_) => PacienteViewModel(repository: patientRepository),
